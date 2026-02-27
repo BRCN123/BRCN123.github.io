@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>心宝AI - API开放平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</head>
+
+<body class="bg-gray-950 text-gray-200 scroll-smooth">
+
+<!-- 顶部导航 -->
+<header class="fixed w-full bg-gray-900/80 backdrop-blur border-b border-gray-800 z-50">
+  <div class="max-w-7xl mx-auto flex justify-between items-center px-6 py-4">
+    <h1 class="text-xl font-bold text-white">心宝AI</h1>
+    <nav class="space-x-6 hidden md:block">
+      <a href="#features" class="hover:text-blue-400">产品能力</a>
+      <a href="#api" class="hover:text-blue-400">API文档</a>
+      <a href="#pricing" class="hover:text-blue-400">定价</a>
+      <a href="#contact" class="hover:text-blue-400">联系</a>
+    </nav>
+  </div>
+</header>
+
+<!-- Hero -->
+<section class="pt-32 pb-24 text-center bg-gradient-to-b from-gray-900 to-gray-950">
+  <h2 class="text-4xl md:text-6xl font-bold mb-6">
+    新一代 AI 多模态 API 平台
+  </h2>
+  <p class="text-gray-400 max-w-2xl mx-auto mb-8">
+    提供图像生成、视频生成、多模态对话等能力，支持高并发调用与企业级部署。
+  </p>
+  <a href="#api" class="bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-xl text-white text-lg">
+    立即接入 API
+  </a>
+</section>
+
+<!-- 产品能力 -->
+<section id="features" class="max-w-6xl mx-auto px-6 py-20">
+  <h3 class="text-3xl font-bold mb-12 text-center">核心能力</h3>
+  <div class="grid md:grid-cols-3 gap-8">
+
+    <div class="bg-gray-900 p-8 rounded-2xl border border-gray-800">
+      <h4 class="text-xl font-semibold mb-4 text-blue-400">图像生成</h4>
+      <p class="text-gray-400">支持高质量商品图、电商图、创意设计图生成。</p>
+    </div>
+
+    <div class="bg-gray-900 p-8 rounded-2xl border border-gray-800">
+      <h4 class="text-xl font-semibold mb-4 text-blue-400">视频生成</h4>
+      <p class="text-gray-400">异步生成短视频，支持任务轮询与回调。</p>
+    </div>
+
+    <div class="bg-gray-900 p-8 rounded-2xl border border-gray-800">
+      <h4 class="text-xl font-semibold mb-4 text-blue-400">多模态对话</h4>
+      <p class="text-gray-400">支持文本+图片输入，生成智能内容。</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- API 文档 -->
+<section id="api" class="bg-gray-900 py-20">
+  <div class="max-w-6xl mx-auto px-6">
+    <h3 class="text-3xl font-bold mb-12 text-center">API 文档</h3>
+
+    <!-- 示例1 -->
+    <div class="mb-12">
+      <h4 class="text-xl font-semibold mb-4 text-blue-400">图像生成接口</h4>
+      <p class="text-gray-400 mb-4">POST /v1beta/models/generateContent</p>
+
+<pre><code class="language-python">
+import requests
+
+url = "https://your-api-domain.com/v1beta/models/generateContent"
+headers = {
+    "Authorization": "Bearer YOUR_API_KEY",
+    "Content-Type": "application/json"
+}
+
+payload = {
+  "contents":[
+    {
+      "role":"user",
+      "parts":[{"text":"生成一张电商产品海报"}]
+    }
+  ],
+  "generationConfig":{
+    "responseModalities":["IMAGE"]
+  }
+}
+
+response = requests.post(url, headers=headers, json=payload)
+print(response.json())
+</code></pre>
+    </div>
+
+    <!-- 示例2 -->
+    <div>
+      <h4 class="text-xl font-semibold mb-4 text-blue-400">视频生成接口</h4>
+      <p class="text-gray-400 mb-4">POST /v1/videos</p>
+
+<pre><code class="language-json">
+{
+  "model": "video-gen-001",
+  "prompt": "生成一个雪山日出延时摄影视频",
+  "duration": 5
+}
+</code></pre>
+    </div>
+
+  </div>
+</section>
+
+<!-- 定价 -->
+<section id="pricing" class="max-w-6xl mx-auto px-6 py-20">
+  <h3 class="text-3xl font-bold mb-12 text-center">定价方案</h3>
+
+  <div class="grid md:grid-cols-3 gap-8">
+
+    <div class="bg-gray-900 p-8 rounded-2xl border border-gray-800">
+      <h4 class="text-xl font-semibold mb-4">开发者版</h4>
+      <p class="text-3xl font-bold mb-4">¥0</p>
+      <p class="text-gray-400">每日限量调用</p>
+    </div>
+
+    <div class="bg-blue-600 p-8 rounded-2xl">
+      <h4 class="text-xl font-semibold mb-4">专业版</h4>
+      <p class="text-3xl font-bold mb-4">¥199/月</p>
+      <p>高并发支持</p>
+    </div>
+
+    <div class="bg-gray-900 p-8 rounded-2xl border border-gray-800">
+      <h4 class="text-xl font-semibold mb-4">企业定制</h4>
+      <p class="text-3xl font-bold mb-4">定制报价</p>
+      <p class="text-gray-400">私有化部署</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- 联系 -->
+<section id="contact" class="bg-gray-950 py-20 text-center">
+  <h3 class="text-3xl font-bold mb-6">联系我们</h3>
+  <p class="text-gray-400 mb-6">商务合作 & API 接入支持</p>
+  <button class="bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-xl">
+    获取 API Key
+  </button>
+</section>
+
+<!-- 页脚 -->
+<footer class="bg-gray-900 border-t border-gray-800 py-6 text-center text-gray-500 text-sm">
+  © 2026 心宝AI开放平台 · All Rights Reserved
+</footer>
+
+</body>
+</html>

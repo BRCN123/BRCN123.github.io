@@ -91,10 +91,15 @@
     .animation-delay-4000 { animation-delay: 4s; }
 
     /* 其他辅助样式 */
-    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(203, 213, 225, 0.8); border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.8); }
+    
+    /* 隐藏特定区域的滚动条但保持可滑动 */
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
     .sortable-ghost { opacity: 0.3; background: rgba(0,0,0,0.1); border-radius: 8px; }
     .log-success{color: #34d399;}
     .log-error{color: #f87171;}
@@ -128,14 +133,14 @@
         <svg class="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
-        <span class="text-sm text-emerald-900 font-medium">积分换算：100积分=3元，充值请联系作者！（WX：lp01291070），另有ComfyUI用户也可提供对应的插件，Key通用</span>
+        <span class="text-sm text-emerald-900 font-medium">积分换算：100积分=3元，充值请联系作者！（WX：lp01291070），高峰期因模型问题导致生图失败会返还积分，如遇网络波动等其他问题导致任务中断，积分被扣除，可通过日志中的任务ID找回图片，</span>
     </div>
     <button onclick="document.getElementById('rechargeBar').classList.add('hidden')" class="text-emerald-400 hover:text-emerald-600 font-bold ml-4">✕</button>
 </div>
 
-<div class="max-w-7xl mx-auto grid grid-cols-3 gap-6">
+<div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-<div class="col-span-2 space-y-6">
+<div class="lg:col-span-2 space-y-6">
 
 <div class="glass-card p-7 rounded-3xl">
     <h2 class="text-2xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">PH Nano Banana AI Studio</h2>
@@ -148,13 +153,13 @@
         <button onclick="checkCredits()" class="btnMain whitespace-nowrap flex-shrink-0 px-6 bg-slate-800 shadow-md">查询余额</button>
     </div>
 
-    <div class="grid grid-cols-4 gap-4 mb-5">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
         <select id="model" class="inputMain font-medium text-sm">
-            <option value="nano-banana-2">banana-2--6.5积分</option>
-            <option value="nano-banana-fast">banana-1--2.2积分</option>
-            <option value="nano-banana-pro">banana-1-pro--9积分</option>
-            <option value="nano-banana-pro-vt">banana-1-v--9积分</option>
-            <option value="nano-banana-pro-cl">banana-1-c--17积分（质量最高）</option>
+            <option value="nano-banana-2">banana 2--6.5积分</option>
+            <option value="nano-banana-fast">banana 1--2.2积分</option>
+            <option value="nano-banana-pro">banana pro--9积分</option>
+            <option value="nano-banana-pro-vt">banana pro-v--9积分</option>
+            <option value="nano-banana-pro-cl">banana pro-c--17积分（质量最高）</option>
         </select>
         <select id="ratio" class="inputMain font-medium text-sm">
             <option value="auto">auto</option>
@@ -163,6 +168,10 @@
             <option value="9:16">9:16</option>
             <option value="4:3">4:3</option>
             <option value="3:4">3:4</option>
+            <option value="3:2">3:2</option>
+            <option value="2:3">2:3</option>
+            <option value="5:4">5:4</option>
+            <option value="4:5">4:5</option>
             <option value="21:9">21:9</option>
             <option value="4:1">4:1 - banana-2专属</option>
             <option value="1:4">1:4 - banana-2专属</option>
@@ -208,10 +217,30 @@
 </div>
 
 <div class="glass-card p-6 rounded-3xl">
-    <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold text-slate-700 text-lg">当前生成结果</h3>
-        <button id="downloadAllBtn" onclick="downloadAllResults()" class="text-sm bg-indigo-50/80 border border-indigo-200 text-indigo-600 px-4 py-1.5 rounded-full hover:bg-indigo-100 hover:shadow shadow-sm hidden transition-all font-medium">一键下载</button>
+    <div class="flex justify-between items-center mb-4 gap-4">
+        
+        <div class="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-hide w-full">
+            <h3 class="font-bold text-slate-700 text-lg whitespace-nowrap shrink-0">当前生成结果</h3>
+            
+            <div class="flex items-center gap-2 text-sm text-slate-600 font-medium bg-white/50 backdrop-blur px-3 py-1.5 rounded-full border border-slate-200 shadow-sm whitespace-nowrap shrink-0">
+                <label class="relative inline-flex items-center cursor-pointer mb-0">
+                  <input type="checkbox" id="autoSaveToggle" class="sr-only peer" onchange="handleAutoSaveToggle()">
+                  <div class="w-8 h-4 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500"></div>
+                  <span class="ml-2 text-[11px] font-bold text-slate-600">自动保存</span>
+                </label>
+                <div class="w-px h-3 bg-slate-300 mx-1"></div>
+                <span id="autoSavePathLabel" onclick="changeAutoSavePath()" class="text-[11px] text-indigo-600 cursor-pointer hover:text-indigo-800 hover:underline transition-colors" title="点击修改保存目录">未选择</span>
+            </div>
+            
+            <div class="flex items-center bg-white/50 backdrop-blur rounded-full border border-slate-200 overflow-hidden shadow-sm shrink-0 w-[200px]">
+                <input type="text" id="recoverTaskId" placeholder="输入ID找回任务..." class="bg-transparent border-none text-[11px] px-3 py-1.5 w-full outline-none text-slate-600 placeholder-slate-400">
+                <button onclick="recoverTask()" class="bg-indigo-500 hover:bg-indigo-600 text-white text-[11px] px-3 py-1.5 font-bold transition-colors whitespace-nowrap border-l border-indigo-600">找回</button>
+            </div>
+        </div>
+
+        <button id="downloadAllBtn" onclick="downloadAllResults()" class="text-sm bg-indigo-50/80 border border-indigo-200 text-indigo-600 px-4 py-1.5 rounded-full hover:bg-indigo-100 hover:shadow shadow-sm hidden transition-all font-medium whitespace-nowrap shrink-0">一键下载</button>
     </div>
+    
     <div id="resultArea" class="columns-2 gap-4 min-h-[150px]"></div>
 </div>
 
@@ -219,24 +248,25 @@
 
 <div class="flex flex-col gap-6">
 
-<div class="bg-black text-white p-5 rounded-xl shadow h-[450px] flex flex-col">
-    <div class="flex justify-between mb-3">
-        <h3>运行日志</h3>
-        <button onclick="clearLog()" class="text-xs text-gray-400 hover:text-white">清空</button>
+<div class="bg-black text-white p-5 rounded-xl shadow h-[450px] flex flex-col relative overflow-hidden">
+    <div class="absolute top-[-50px] right-[-50px] w-32 h-32 bg-indigo-500 rounded-full mix-blend-screen filter blur-[60px] opacity-30 pointer-events-none"></div>
+    <div class="flex justify-between items-center mb-3 relative z-10">
+        <h3 class="font-bold tracking-wide">运行日志</h3>
+        <button onclick="clearLog()" class="text-xs text-slate-400 hover:text-white bg-slate-800/50 px-3 py-1 rounded-full border border-slate-700 transition-all">清空</button>
     </div>
-    <div class="flex gap-3 text-xs mb-3">
-        <div><label>轮询间隔(秒)</label><input id="pollInterval" type="number" value="5" min="1" class="w-20 mt-1 px-2 py-1 rounded bg-gray-800 border border-gray-600 text-white"></div>
-        <div><label>总时长(秒)</label><input id="pollTimeout" type="number" value="201" min="5" class="w-20 mt-1 px-2 py-1 rounded bg-gray-800 border border-gray-600 text-white"></div>
+    <div class="flex gap-3 text-xs mb-4 relative z-10">
+        <div class="flex-1"><label class="block mb-1 text-slate-400">轮询(秒)</label><input id="pollInterval" type="number" value="5" min="1" class="w-full px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 text-white outline-none focus:border-indigo-500"></div>
+        <div class="flex-1"><label class="block mb-1 text-slate-400">超时(秒)</label><input id="pollTimeout" type="number" value="201" min="5" class="w-full px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 text-white outline-none focus:border-indigo-500"></div>
     </div>
-    <div id="logArea" class="flex-1 overflow-y-auto text-xs font-mono pr-2 flex flex-col gap-2"></div>
+    <div id="logArea" class="flex-1 overflow-y-auto text-xs font-mono pr-2 flex flex-col gap-2 relative z-10"></div>
 </div>
 
-<div class="bg-white p-5 rounded-xl shadow h-[600px] flex flex-col">
+<div class="glass-card p-6 rounded-3xl h-[600px] flex flex-col">
     <div class="flex flex-col gap-3 mb-4">
         <div class="flex justify-between items-center">
             <h3 class="font-semibold leading-tight">
                 <span class="text-base block">历史记录（上限500条）</span>
-                <span class="text-[11px] text-gray-400 font-normal tracking-tighter">图片时效2h，请及时下载 (过期复用仍可用)</span>
+                <span class="text-[12px] text-gray-400 font-normal tracking-tighter">图片时效2h，请及时下载(过期复用仍可用)</span>
             </h3>
             <div class="flex gap-2 items-center flex-shrink-0">
                 <button onclick="exportHistory()" class="text-xs text-blue-500 hover:text-blue-700">导出</button>
@@ -315,54 +345,105 @@
 </div>
 
 <script>
-const HOST="https://grsai.dakka.com.cn";
+const HOST = atob("aHR0cHM6Ly9ncnNhaS5kYWtrYS5jb20uY24=");
 const MAX_IMAGES=16, MAX_IMG_WIDTH=2048, MAX_HISTORY=500;
 let uploadedImagesBase64=[], uploadedImageUrls=[], historyImages = JSON.parse(localStorage.getItem('banana_history')) || [];
 let currentResultUrls = [], isTaskCancelled = false, currentModalItem = null, currentModalIndex = -1;
 
-/* ===== 参考图编辑器逻辑 (带时光机撤销重做功能) ===== */
+/* ===== 文件系统自动保存 API 逻辑 ===== */
+let autoSaveDirHandle = null;
+
+window.handleAutoSaveToggle = async function() {
+    const toggle = document.getElementById('autoSaveToggle');
+    const label = document.getElementById('autoSavePathLabel');
+    
+    if (toggle.checked) {
+        if (!window.showDirectoryPicker) {
+            alert("⚠️ 您的浏览器不支持指定目录自动保存功能，请使用最新版 Chrome 或 Edge 浏览器。");
+            toggle.checked = false;
+            return;
+        }
+        try {
+            autoSaveDirHandle = await window.showDirectoryPicker({ mode: "readwrite" });
+            label.innerText = autoSaveDirHandle.name;
+            label.title = "已开启自动保存，点击修改目录: " + autoSaveDirHandle.name;
+            log(`已开启自动保存，所有生成图片将存入 [${autoSaveDirHandle.name}]`, "success");
+        } catch (e) {
+            console.warn("User cancelled directory selection", e);
+            toggle.checked = false;
+            label.innerText = "未选择";
+        }
+    } else {
+        autoSaveDirHandle = null;
+        label.innerText = "未选择";
+        label.title = "点击修改保存目录";
+        log("自动保存功能已关闭", "info");
+    }
+}
+
+window.changeAutoSavePath = async function() {
+    const toggle = document.getElementById('autoSaveToggle');
+    if (!window.showDirectoryPicker) {
+        alert("⚠️ 您的浏览器不支持指定目录自动保存功能，请使用最新版 Chrome 或 Edge 浏览器。");
+        return;
+    }
+    try {
+        autoSaveDirHandle = await window.showDirectoryPicker({ mode: "readwrite" });
+        const label = document.getElementById('autoSavePathLabel');
+        label.innerText = autoSaveDirHandle.name;
+        label.title = "已开启自动保存，点击修改目录: " + autoSaveDirHandle.name;
+        toggle.checked = true;
+        log(`已修改自动保存目录至 [${autoSaveDirHandle.name}]`, "success");
+    } catch (e) {
+        console.warn("User cancelled directory selection", e);
+    }
+}
+
+window.autoSaveToDisk = async function(url, filename) {
+    if (!autoSaveDirHandle) return;
+    try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const fileHandle = await autoSaveDirHandle.getFileHandle(filename, { create: true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        log(`💾 已静默保存至本地: ${filename}`, "success");
+    } catch(e) {
+        log(`❌ 自动保存到本地失败: ${e.message}`, "error");
+    }
+}
+
+/* ===== 参考图编辑器逻辑 ===== */
 let bgCanvas, editorCanvas, bgCtx, editorCtx;
 let editIndex = -1;
 let isDrawing = false;
 let currentTool = 'brush';
-
-// 新增历史记录栈
 let undoStack = [];
 let redoStack = [];
 
-// 保存当前涂鸦板的状态
 function saveEditorState() {
     if (!editorCanvas) return;
-    // 获取透明图层并放入撤销栈
     undoStack.push(editorCanvas.toDataURL("image/png"));
-    
-    // 内存保护：最多保存 30 步，防止高分辨率图片撑爆浏览器内存
     if (undoStack.length > 30) undoStack.shift(); 
-    
-    // 只要有新动作，重做栈清空
     redoStack = []; 
     updateUndoRedoButtons();
 }
 
-// 刷新撤销和重做按钮的可用状态
 function updateUndoRedoButtons() {
     const btnUndo = document.getElementById("btnUndo");
     const btnRedo = document.getElementById("btnRedo");
-    if(btnUndo) btnUndo.disabled = undoStack.length <= 1; // 至少保留一个初始空白页
+    if(btnUndo) btnUndo.disabled = undoStack.length <= 1; 
     if(btnRedo) btnRedo.disabled = redoStack.length === 0;
 }
 
-// 撤销：返回上一步
 function undoEditor() {
     if (undoStack.length > 1) {
-        // 把当前的图推给重做栈
         redoStack.push(undoStack.pop()); 
-        // 恢复成上一个状态
         restoreEditorState(undoStack[undoStack.length - 1]);
     }
 }
 
-// 重做：返回下一步
 function redoEditor() {
     if (redoStack.length > 0) {
         const state = redoStack.pop();
@@ -371,17 +452,13 @@ function redoEditor() {
     }
 }
 
-// 根据记录的图片重新绘制透明涂鸦层
 function restoreEditorState(dataUrl) {
     const img = new Image();
     img.onload = () => {
         const prevGCO = editorCtx.globalCompositeOperation;
-        // 必须切换回覆盖模式才能把图片画上去（防止在橡皮擦模式下出 bug）
         editorCtx.globalCompositeOperation = "source-over"; 
         editorCtx.clearRect(0, 0, editorCanvas.width, editorCanvas.height);
         editorCtx.drawImage(img, 0, 0);
-        
-        // 恢复你刚刚选择的画笔或橡皮擦模式
         editorCtx.globalCompositeOperation = prevGCO; 
         updateUndoRedoButtons();
     };
@@ -392,7 +469,7 @@ function initEditor() {
     bgCanvas = document.getElementById("bgCanvas");
     editorCanvas = document.getElementById("editorCanvas");
     bgCtx = bgCanvas.getContext("2d");
-    editorCtx = editorCanvas.getContext("2d", { willReadFrequently: true }); // 优化性能
+    editorCtx = editorCanvas.getContext("2d", { willReadFrequently: true }); 
 
     const startDraw = (e) => {
         isDrawing = true;
@@ -436,7 +513,6 @@ function initEditor() {
         if (isDrawing) {
             isDrawing = false;
             editorCtx.beginPath();
-            // 画完一笔，保存当前状态到历史栈中
             saveEditorState();
         }
     };
@@ -462,7 +538,6 @@ function setEditorTool(tool) {
 
 function clearEditorCanvas(recordHistory = true) {
     editorCtx.clearRect(0, 0, editorCanvas.width, editorCanvas.height);
-    // 清空操作也是一种绘画行为，如果允许的话加入到撤销栈里
     if (recordHistory) {
         saveEditorState();
     }
@@ -485,10 +560,8 @@ function openEditor(idx) {
         bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
         bgCtx.drawImage(img, 0, 0);
         
-        // 进去后强制清空涂鸦层，并且不记录这次清空
         clearEditorCanvas(false);
         
-        // 重置撤销重做栈，并保存初始的【空白透明图层】
         undoStack = [];
         redoStack = [];
         saveEditorState();
@@ -555,7 +628,7 @@ function renderLogTaskCard(uniqueId, displayIdx) {
             </div>
             <div id="log-id-${uniqueId}" class="text-[10px] text-slate-400/80 truncate font-mono">ID: 等待分配</div>
             <div class="w-full bg-slate-900/80 rounded-full h-1.5 overflow-hidden shadow-inner border border-slate-700/50">
-                <div id="log-progress-${uniqueId}" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+                <div id="log-progress-${uniqueId}" class="bg-blue-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
             </div>
         </div>
     `;
@@ -574,16 +647,13 @@ function updateLogTaskCard(uniqueId, statusMsg, progress, taskId = null, isError
     if(statusEl) {
         statusEl.innerText = statusMsg;
         statusEl.classList.remove('animate-pulse');
-        if(isError) statusEl.className = "text-rose-400 text-[11px] font-medium";
-        else if(progress === 100) statusEl.className = "text-emerald-400 text-[11px] font-bold";
-        else {
-            statusEl.className = "text-indigo-300 text-[11px] font-medium";
-            if(progress > 0 && progress < 100) statusEl.classList.add('animate-pulse');
-        }
+        if(isError) statusEl.className = "text-red-400 text-[10px]";
+        else if(progress === 100) statusEl.className = "text-green-400 text-[10px]";
+        else statusEl.className = "text-blue-300 text-[10px]";
     }
     if(progressEl && !isError) progressEl.style.width = `${progress}%`;
-    if(progressEl && isError) progressEl.className = "bg-rose-500 h-full rounded-full";
-    if(progressEl && progress === 100) progressEl.className = "bg-emerald-500 h-full rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]";
+    if(progressEl && isError) progressEl.className = "bg-red-500 h-1.5 rounded-full";
+    if(progressEl && progress === 100) progressEl.className = "bg-green-500 h-1.5 rounded-full";
     if(idEl && taskId) idEl.innerText = `ID: ${taskId}`;
 }
 
@@ -617,7 +687,7 @@ function updateSkeletonProgress(uniqueId, progress, isError = false) {
     
     if(isError && textEl) {
         textEl.innerText = "生成失败";
-        textEl.className = "text-xs text-rose-500 mt-1 font-bold";
+        textEl.className = "text-xs text-red-500 mt-1 font-bold";
         if(progEl) progEl.className = "bg-red-500 h-1.5 rounded-full";
         const skel = document.getElementById(`skeleton-${uniqueId}`);
         if(skel) {
@@ -713,6 +783,81 @@ window.checkCredits = async function() {
     } catch(err) { log("查询异常：" + err.message, "error"); }
 };
 
+window.recoverTask = async function() {
+    const taskId = document.getElementById("recoverTaskId").value.trim();
+    if (!taskId) return alert("请输入要找回的任务 ID！");
+    
+    const key = document.getElementById("apikey").value.trim();
+    if(!key) return alert("请先填写 API Key");
+
+    const btn = document.querySelector("#recoverTaskId").nextElementSibling;
+    const originalText = btn.innerText;
+    btn.innerText = "查找中...";
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`${HOST}/v1/draw/result`, {
+            method: "POST", headers: {"Content-Type":"application/json", "Authorization": "Bearer " + key},
+            body: JSON.stringify({id: taskId})
+        });
+        const d = await parseSafeJson(res);
+        
+        if (!d || !d.data) {
+            alert("未找到该任务或查询失败");
+        } else if (d.data.status === "succeeded") {
+            log(`[找回成功] 任务ID: ${taskId}`, "success");
+            
+            let savedP = null;
+            let costSeconds = null;
+            try {
+                let meta = JSON.parse(localStorage.getItem('banana_tasks_meta') || '{}');
+                savedP = meta[taskId]; 
+                if (savedP && savedP.costTime) {
+                    costSeconds = savedP.costTime;
+                }
+            } catch(e) {}
+
+            // 兜底尝试从 API 数据中解析耗时
+            if (!costSeconds) {
+                if (d.data.cost) costSeconds = Math.round(d.data.cost);
+                else if (d.data.duration) costSeconds = Math.round(d.data.duration);
+                else if (d.data.costTime) costSeconds = Math.round(d.data.costTime);
+            }
+
+            const badgeText = costSeconds ? `耗时 ${costSeconds} 秒` : "已找回";
+
+            const p = savedP || {
+                model: d.data.model || d.data.request?.model || "nano-banana-2",
+                prompt: d.data.prompt || d.data.request?.prompt || "本地缓存未找到该任务的原始提示词（图片已找回）",
+                ratio: d.data.aspectRatio || d.data.request?.aspectRatio || "auto",
+                size: d.data.imageSize || d.data.request?.imageSize || "1K"
+            };
+            
+            const uniqueId = "recover-" + Date.now();
+            
+            d.data.results.forEach(r => { 
+                addResult(r.url, p, uniqueId, badgeText); 
+                currentResultUrls.push(r.url); 
+                
+                if (autoSaveDirHandle) {
+                    autoSaveToDisk(r.url, `Banana_Recovered_${Date.now()}_${Math.floor(Math.random()*1000)}.png`);
+                }
+            });
+            document.getElementById("downloadAllBtn").classList.remove("hidden");
+            document.getElementById("recoverTaskId").value = ""; 
+        } else if (d.data.status === "failed") {
+            alert(`任务已失败，无法找回。失败原因: ${d.data.failReason || '未知'}`);
+        } else {
+            alert(`任务仍在处理中 (状态: ${d.data.status}, 进度: ${d.data.progress || 0}%)。请等待完成后再次找回！`);
+        }
+    } catch (e) {
+        alert(`查询异常: ${e.message}`);
+    } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }
+};
+
 window.generate = async function() {
     const key = document.getElementById("apikey").value.trim();
     if(!key) return log("API Key 为空", "error");
@@ -745,8 +890,11 @@ window.generate = async function() {
     toggleTaskUI(false);
 };
 
+/* ===== 加入了精细耗时计算的任务流 ===== */
 async function submitSingleTask(key, uniqueId, displayIdx, p) {
     if (isTaskCancelled) return;
+    const taskStartTime = Date.now(); // 记录当前任务的精准开始时间
+    
     try {
         updateLogTaskCard(uniqueId, "正在提交请求...", 5);
         updateSkeletonProgress(uniqueId, 5);
@@ -761,9 +909,19 @@ async function submitSingleTask(key, uniqueId, displayIdx, p) {
         });
         const d = await parseSafeJson(res);
         if(d && d.data) {
+            try {
+                let meta = JSON.parse(localStorage.getItem('banana_tasks_meta') || '{}');
+                meta[d.data.id] = p;
+                const keys = Object.keys(meta);
+                if(keys.length > 200) delete meta[keys[0]]; 
+                localStorage.setItem('banana_tasks_meta', JSON.stringify(meta));
+            } catch(e) {}
+            
             updateLogTaskCard(uniqueId, "排队/生成中...", 10, d.data.id);
             updateSkeletonProgress(uniqueId, 10);
-            await pollResult(d.data.id, key, uniqueId, p);
+            
+            // 将精准开始时间传递给轮询函数
+            await pollResult(d.data.id, key, uniqueId, p, taskStartTime);
         } else {
             const errMsg = d ? d.msg : "未知错误";
             updateLogTaskCard(uniqueId, `提交失败: ${errMsg}`, 0, null, true);
@@ -777,10 +935,12 @@ async function submitSingleTask(key, uniqueId, displayIdx, p) {
     }
 }
 
-async function pollResult(id, key, uniqueId, p){
+async function pollResult(id, key, uniqueId, p, taskStartTime){
+    taskStartTime = taskStartTime || Date.now(); // 兜底处理
     const iv = Number(document.getElementById("pollInterval").value) * 1000;
     const to = Number(document.getElementById("pollTimeout").value) * 1000;
-    const start = Date.now();
+    const start = Date.now(); // 仅用于控制超时
+    
     while(!isTaskCancelled){
         if(Date.now() - start > to) {
             updateLogTaskCard(uniqueId, "等待超时", 0, id, true);
@@ -803,8 +963,27 @@ async function pollResult(id, key, uniqueId, p){
             updateSkeletonProgress(uniqueId, prog);
             
             if(d.data.status === "succeeded"){
-                updateLogTaskCard(uniqueId, `生成成功`, 100, id);
-                d.data.results.forEach(r => { addResult(r.url, p, uniqueId); currentResultUrls.push(r.url); });
+                // 计算从提交到现在的总耗时
+                const costSeconds = Math.round((Date.now() - taskStartTime) / 1000);
+                updateLogTaskCard(uniqueId, `生成成功--耗时${costSeconds}秒`, 100, id);
+                
+                // 存入本地记录，以便找回时有据可查
+                try {
+                    let meta = JSON.parse(localStorage.getItem('banana_tasks_meta') || '{}');
+                    if (meta[id]) {
+                        meta[id].costTime = costSeconds;
+                        localStorage.setItem('banana_tasks_meta', JSON.stringify(meta));
+                    }
+                } catch(e) {}
+                
+                d.data.results.forEach(r => { 
+                    addResult(r.url, p, uniqueId, `耗时 ${costSeconds} 秒`); 
+                    currentResultUrls.push(r.url); 
+                    
+                    if (autoSaveDirHandle) {
+                        autoSaveToDisk(r.url, `Banana_${Date.now()}_${Math.floor(Math.random()*1000)}.png`);
+                    }
+                });
                 document.getElementById("downloadAllBtn").classList.remove("hidden");
                 return;
             }
@@ -820,36 +999,75 @@ async function pollResult(id, key, uniqueId, p){
     }
 }
 
-function addResult(url, p, uniqueId){
+// 接收 badgeText 参数并在图片左上角生成悬浮勋章
+function addResult(url, p, uniqueId, badgeText = ""){
     const record = { url, model: p.model, prompt: p.prompt, ratio: p.ratio, imageSize: p.size };
     historyImages.unshift(record);
     if(historyImages.length > MAX_HISTORY) historyImages = historyImages.slice(0, MAX_HISTORY);
     localStorage.setItem('banana_history', JSON.stringify(historyImages));
     renderHistory();
     
-    const wrap = document.createElement("div");
-    wrap.className = "relative group mb-4 break-inside-avoid rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white";
-    
-    const img = document.createElement("img");
-    img.src = url; 
-    img.className = "w-full h-auto cursor-pointer transition-transform duration-700 group-hover:scale-105 animate-fade-in block";
-    img.loading = "lazy";   
-    img.decoding = "async"; 
-    img.onclick = () => openModal(record);
-
-    const overlay = document.createElement("div");
-    overlay.className = "absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none";
-
-    wrap.append(img, overlay);
-
-    const skeleton = document.getElementById(`skeleton-${uniqueId}`);
-    if(skeleton && skeleton.parentNode) {
-        skeleton.parentNode.replaceChild(wrap, skeleton);
-    } else {
-        document.getElementById("resultArea").appendChild(wrap);
+    // 【优化点】在等待下载大图期间，把骨架屏的文字变成“加载大图中...”
+    const skelText = document.getElementById(`skel-text-${uniqueId}`);
+    if (skelText) {
+        skelText.innerText = "加载大图中...";
+        skelText.className = "text-[10px] text-indigo-500 mt-1 font-mono font-bold animate-pulse";
     }
-}
 
+    // 【核心修复】引入 Image 预加载机制，告别半截灰图
+    const tempImg = new Image();
+    
+    // 只有当图片100%下载到浏览器本地内存后，才会触发 onload 并替换DOM
+    tempImg.onload = () => {
+        const wrap = document.createElement("div");
+        wrap.className = "relative group mb-4 break-inside-avoid rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white";
+        
+        const img = document.createElement("img");
+        img.src = url; 
+        img.className = "w-full h-auto cursor-pointer transition-transform duration-700 group-hover:scale-105 animate-fade-in block";
+        // 因为已经在后台加载完了，所以不再需要 loading="lazy"，直接瞬间渲染
+        img.decoding = "async"; 
+        img.onclick = () => openModal(record);
+
+        const overlay = document.createElement("div");
+        overlay.className = "absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none";
+
+        wrap.append(img, overlay);
+
+        if (badgeText) {
+            const badge = document.createElement("div");
+            badge.className = "absolute top-3 left-3 bg-emerald-500/90 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-lg pointer-events-none z-10 shadow-md border border-emerald-300/50 flex items-center gap-1";
+            badge.innerHTML = `<span>⏱️</span> ${badgeText}`;
+            wrap.append(badge);
+        }
+
+        // 精准替换对应的骨架屏
+        const skeleton = document.getElementById(`skeleton-${uniqueId}`);
+        if(skeleton && skeleton.parentNode) {
+            skeleton.parentNode.replaceChild(wrap, skeleton);
+        } else {
+            document.getElementById("resultArea").appendChild(wrap);
+        }
+    };
+
+    // 兜底防卡死：如果在极少数情况下预加载失败，依然强制渲染出来让浏览器自己处理
+    tempImg.onerror = () => {
+        const wrap = document.createElement("div");
+        wrap.className = "relative group mb-4 break-inside-avoid rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white";
+        const img = document.createElement("img");
+        img.src = url;
+        img.className = "w-full h-auto cursor-pointer transition-transform duration-700 group-hover:scale-105 animate-fade-in block";
+        img.onclick = () => openModal(record);
+        wrap.append(img);
+        
+        const skeleton = document.getElementById(`skeleton-${uniqueId}`);
+        if(skeleton && skeleton.parentNode) skeleton.parentNode.replaceChild(wrap, skeleton);
+        else document.getElementById("resultArea").appendChild(wrap);
+    };
+
+    // 赋值 src，正式触发后台静默下载
+    tempImg.src = url;
+}
 function getFilteredHistory() {
     const searchInput = document.getElementById("historySearch");
     const keyword = searchInput ? searchInput.value.trim().toLowerCase() : "";
@@ -1070,7 +1288,8 @@ window.cancelTask = function() {
     });
     
     document.querySelectorAll('[id^="log-status-"]').forEach(statusEl => {
-        if(statusEl.innerText !== "生成成功" && !statusEl.innerText.includes("失败")) {
+        // 由于加上了耗时，取消任务时通过模糊包含判断，避免把已成功的任务标红
+        if(!statusEl.innerText.includes("生成成功") && !statusEl.innerText.includes("失败")) {
             statusEl.innerText = "已手动取消";
             statusEl.className = "text-red-400 text-[10px]";
             statusEl.classList.remove('animate-pulse');
@@ -1118,7 +1337,7 @@ document.getElementById("refUrls").addEventListener("input", function(){
 
 async function fetchAnnouncement() {
     try {
-        const data = { code: 0, data: { message: "📢 体验提升：涂鸦编辑器已加入『撤销与重做』时光机，轻松修补每一次误涂！" } };
+        const data = { code: 0, data: { message: "📢 欢迎使用 PH AI Studio！系统已更新至最新版本。如果遇到生成排队，请耐心等待。" } };
         if (data.code === 0 && data.data.message) {
             document.getElementById("announcementText").innerText = data.data.message;
             document.getElementById("announcementBar").classList.remove("hidden");

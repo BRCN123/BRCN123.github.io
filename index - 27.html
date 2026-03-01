@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>PH Nano Banana AI Studio - Pro Glass</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<style>
+    /* ================= 苹果风毛玻璃核心 CSS ================= */
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.6);
+        --glass-border: rgba(255, 255, 255, 0.8);
+        --dark-glass-bg: rgba(15, 23, 42, 0.75);
+    }
+    
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    /* 亮色毛玻璃卡片 */
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255,255,255,0.5);
+    }
+
+    /* 暗色毛玻璃卡片（用于日志） */
+    .glass-dark {
+        background: var(--dark-glass-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.4);
+    }
+
+    /* 拟态输入框 */
+    .inputMain {
+        background: rgba(255, 255, 255, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        padding: 10px 14px;
+        border-radius: 12px;
+        width: 100%;
+        outline: none;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        color: #334155;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .inputMain:focus {
+        background: rgba(255, 255, 255, 0.9);
+        border-color: #818cf8;
+        box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.2), inset 0 1px 2px rgba(0,0,0,0.01);
+    }
+
+    /* 渐变拟态按钮 */
+    .btnMain {
+        background: linear-gradient(135deg, #6366f1, #a855f7);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 12px;
+        font-weight: 600;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 15px -3px rgba(99, 102, 241, 0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+    .btnMain:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px -4px rgba(99, 102, 241, 0.5), inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+    .btnMain:active:not(:disabled) {
+        transform: translateY(1px);
+        box-shadow: 0 2px 10px -2px rgba(99, 102, 241, 0.4);
+    }
+    .btnMain:disabled {
+        background: rgba(148, 163, 184, 0.5);
+        color: rgba(255, 255, 255, 0.8);
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+
+    /* 背景漂浮动画 */
+    @keyframes blob {
+        0% { transform: translate(0px, 0px) scale(1); }
+        33% { transform: translate(30px, -50px) scale(1.1); }
+        66% { transform: translate(-20px, 20px) scale(0.9); }
+        100% { transform: translate(0px, 0px) scale(1); }
+    }
+    .animate-blob { animation: blob 10s infinite alternate; }
+    .animation-delay-2000 { animation-delay: 2s; }
+    .animation-delay-4000 { animation-delay: 4s; }
+
+    /* 其他辅助样式 */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(203, 213, 225, 0.8); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.8); }
+    .sortable-ghost { opacity: 0.3; background: rgba(0,0,0,0.1); border-radius: 8px; }
+    .log-success{color: #34d399;}
+    .log-error{color: #f87171;}
+    .log-warning{color: #fbbf24;}
+    .log-info{color: #94a3b8;}
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+    .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+</style>
+</head>
+
+<body class="bg-slate-50 min-h-screen p-6 relative overflow-x-hidden text-slate-800">
+
+<div class="fixed top-[-10%] left-[-10%] w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-[100px] opacity-60 animate-blob pointer-events-none z-0"></div>
+<div class="fixed top-[20%] right-[-5%] w-96 h-96 bg-blue-300 rounded-full mix-blend-multiply filter blur-[100px] opacity-60 animate-blob animation-delay-2000 pointer-events-none z-0"></div>
+<div class="fixed bottom-[-10%] left-[20%] w-[500px] h-[500px] bg-pink-300 rounded-full mix-blend-multiply filter blur-[120px] opacity-60 animate-blob animation-delay-4000 pointer-events-none z-0"></div>
+
+<div class="relative z-10">
+
+<div id="announcementBar" class="max-w-7xl mx-auto mb-4 glass-card bg-blue-50/50 p-4 rounded-2xl hidden flex justify-between items-center transition-all duration-300">
+    <div class="flex items-center">
+        <svg class="h-5 w-5 text-indigo-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+        </svg>
+        <span id="announcementText" class="text-sm text-indigo-900 font-medium">加载公告中...</span>
+    </div>
+    <button onclick="closeAnnouncement()" class="text-indigo-400 hover:text-indigo-600 font-bold ml-4">✕</button>
+</div>
+
+<div id="rechargeBar" class="max-w-7xl mx-auto mb-6 glass-card bg-green-50/50 p-4 rounded-2xl flex justify-between items-center transition-all duration-300">
+    <div class="flex items-center">
+        <svg class="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span class="text-sm text-emerald-900 font-medium">积分换算：100积分=3元，充值请联系作者！（WX：lp01291070），另有ComfyUI用户也可提供对应的插件，Key通用</span>
+    </div>
+    <button onclick="document.getElementById('rechargeBar').classList.add('hidden')" class="text-emerald-400 hover:text-emerald-600 font-bold ml-4">✕</button>
+</div>
+
+<div class="max-w-7xl mx-auto grid grid-cols-3 gap-6">
+
+<div class="col-span-2 space-y-6">
+
+<div class="glass-card p-7 rounded-3xl">
+    <h2 class="text-2xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">PH Nano Banana AI Studio</h2>
+
+    <div class="flex gap-4 mb-5 items-center">
+        <div class="relative flex-1">
+            <input type="password" id="apikey" class="inputMain pr-8" placeholder="填写您的 API Key">
+            <button onclick="clearApiKey()" class="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-400 hover:text-indigo-500 bg-white/50 backdrop-blur rounded-full w-6 h-6 flex items-center justify-center shadow-sm border border-white transition-all" title="彻底清除本地保存的 API Key">✕</button>
+        </div>
+        <button onclick="checkCredits()" class="btnMain whitespace-nowrap flex-shrink-0 px-6 bg-slate-800 shadow-md">查询余额</button>
+    </div>
+
+    <div class="grid grid-cols-4 gap-4 mb-5">
+        <select id="model" class="inputMain font-medium text-sm">
+            <option value="nano-banana-2">banana-2--6.5积分</option>
+            <option value="nano-banana-fast">banana-1--2.2积分</option>
+            <option value="nano-banana-pro">banana-1-pro--9积分</option>
+            <option value="nano-banana-pro-vt">banana-1-v--9积分</option>
+            <option value="nano-banana-pro-cl">banana-1-c--17积分（质量最高）</option>
+        </select>
+        <select id="ratio" class="inputMain font-medium text-sm">
+            <option value="auto">auto</option>
+            <option value="1:1">1:1</option>
+            <option value="16:9">16:9</option>
+            <option value="9:16">9:16</option>
+            <option value="4:3">4:3</option>
+            <option value="3:4">3:4</option>
+            <option value="21:9">21:9</option>
+            <option value="4:1">4:1 - banana-2专属</option>
+            <option value="1:4">1:4 - banana-2专属</option>
+            <option value="8:1">8:1 - banana-2专属</option>
+            <option value="1:8">1:8 - banana-2专属</option>
+        </select>
+        <select id="imageSize" class="inputMain font-medium text-sm">
+            <option value="1K">1K</option>
+            <option value="2K">2K</option>
+            <option value="4K">4K</option>
+            <option value="0.5K">0.5K - banana-2专属</option>
+        </select>
+        <select id="countSelect" class="inputMain font-medium text-sm">
+            <option value="1">1 张</option>
+            <option value="2">2 张</option>
+            <option value="3">3 张</option>
+            <option value="4">4 张</option>
+            <option value="custom">自定义</option>
+        </select>
+    </div>
+
+    <input id="customCount" type="number" min="1" max="20" class="inputMain mb-5 hidden" placeholder="输入生成数量 (1-20)">
+
+    <div class="relative mb-5">
+        <textarea id="prompt" class="inputMain pr-8 leading-relaxed" rows="4" placeholder="输入您的创作提示词..."></textarea>
+        <button onclick="if(confirm('确定要清空提示词吗？')) document.getElementById('prompt').value=''" class="absolute top-3 right-3 text-gray-400 hover:text-indigo-500 bg-white/50 backdrop-blur rounded-full w-6 h-6 flex items-center justify-center shadow-sm border border-white transition-all" title="清空提示词">✕</button>
+    </div>
+
+    <h3 class="font-bold mb-3 flex items-center text-slate-700">
+        <span class="text-[15px]">参考素材</span>
+        <span id="refImageCount" class="text-xs text-indigo-700 font-bold mx-2 bg-indigo-100/80 px-2.5 py-0.5 rounded-full border border-indigo-200">0/16</span>
+        <span class="text-xs text-slate-400 font-normal tracking-tight">（支持拖拽排序，自动限制最大宽度2048px）</span>
+    </h3>
+    <input type="file" id="refImages" multiple accept="image/*" class="inputMain mb-3 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+    <textarea id="refUrls" class="inputMain mb-4 text-sm" rows="2" placeholder="图片URL（换行分隔）"></textarea>
+    <div id="previewArea" class="flex flex-wrap gap-4 mb-6 min-h-[60px] p-2 bg-white/30 rounded-xl border border-dashed border-slate-300"></div>
+
+    <div class="flex gap-4">
+        <button id="generateBtn" onclick="generate()" class="btnMain flex-1 text-lg tracking-wide">✨ 开始生成</button>
+        <button id="cancelBtn" onclick="cancelTask()" class="btnMain hidden text-lg shadow-md hover:scale-[102%]" style="background: linear-gradient(135deg, #ef4444, #f43f5e); width: auto; padding-left: 2rem; padding-right: 2rem;">停止任务</button>
+    </div>
+</div>
+
+<div class="glass-card p-6 rounded-3xl">
+    <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-slate-700 text-lg">当前生成结果</h3>
+        <button id="downloadAllBtn" onclick="downloadAllResults()" class="text-sm bg-indigo-50/80 border border-indigo-200 text-indigo-600 px-4 py-1.5 rounded-full hover:bg-indigo-100 hover:shadow shadow-sm hidden transition-all font-medium">一键下载</button>
+    </div>
+    <div id="resultArea" class="columns-2 gap-4 min-h-[150px]"></div>
+</div>
+
+</div>
+
+<div class="flex flex-col gap-6">
+
+<div class="bg-black text-white p-5 rounded-xl shadow h-[450px] flex flex-col">
+    <div class="flex justify-between mb-3">
+        <h3>运行日志</h3>
+        <button onclick="clearLog()" class="text-xs text-gray-400 hover:text-white">清空</button>
+    </div>
+    <div class="flex gap-3 text-xs mb-3">
+        <div><label>轮询间隔(秒)</label><input id="pollInterval" type="number" value="5" min="1" class="w-20 mt-1 px-2 py-1 rounded bg-gray-800 border border-gray-600 text-white"></div>
+        <div><label>总时长(秒)</label><input id="pollTimeout" type="number" value="201" min="5" class="w-20 mt-1 px-2 py-1 rounded bg-gray-800 border border-gray-600 text-white"></div>
+    </div>
+    <div id="logArea" class="flex-1 overflow-y-auto text-xs font-mono pr-2 flex flex-col gap-2"></div>
+</div>
+
+<div class="bg-white p-5 rounded-xl shadow h-[600px] flex flex-col">
+    <div class="flex flex-col gap-3 mb-4">
+        <div class="flex justify-between items-center">
+            <h3 class="font-semibold leading-tight">
+                <span class="text-base block">历史记录（上限500条）</span>
+                <span class="text-[11px] text-gray-400 font-normal tracking-tighter">时效2h(过期复用仍可用)</span>
+            </h3>
+            <div class="flex gap-2 items-center flex-shrink-0">
+                <button onclick="exportHistory()" class="text-xs text-blue-500 hover:text-blue-700">导出</button>
+                <button onclick="document.getElementById('importFile').click()" class="text-xs text-green-500 hover:text-green-700">导入</button>
+                <input type="file" id="importFile" class="hidden" accept=".json" onchange="importHistory(event)">
+                <span class="text-gray-300">|</span>
+                <button onclick="clearHistory()" class="text-xs text-red-500 hover:text-red-700">清空</button>
+            </div>
+        </div>
+        <div class="relative w-full">
+            <input type="text" id="historySearch" oninput="renderHistory()" placeholder="🔍 输入提示词关键信息搜索历史..." class="inputMain text-xs py-1.5 px-3 w-full bg-gray-50 border-gray-200 focus:bg-white pr-8">
+            <button onclick="document.getElementById('historySearch').value=''; renderHistory();" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-700 text-sm font-bold">✕</button>
+        </div>
+    </div>
+    <div id="historyArea" class="columns-2 lg:columns-3 gap-3 overflow-y-auto flex-1 content-start pr-1 pb-4"></div>
+</div>
+
+</div>
+</div>
+
+<div id="imageModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity">
+    <button onclick="closeModal()" class="absolute top-5 right-8 text-white/80 hover:text-white text-4xl z-50 drop-shadow-md">✕</button>
+    <button id="prevArrow" onclick="prevModalImage()" class="absolute left-6 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white bg-black/30 hover:bg-black/50 rounded-full w-14 h-14 flex items-center justify-center text-3xl z-50 transition-all hidden">&#10094;</button>
+    
+    <img id="modalImg" alt="图片加载中或已过期" class="max-w-[90%] max-h-[85%] rounded-xl shadow-2xl object-contain text-white text-center">
+    
+    <button id="nextArrow" onclick="nextModalImage()" class="absolute right-6 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white bg-black/30 hover:bg-black/50 rounded-full w-14 h-14 flex items-center justify-center text-3xl z-50 transition-all hidden">&#10095;</button>
+    
+    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-3 z-50 bg-black/40 p-2.5 rounded-2xl backdrop-blur-md border border-white/10 shadow-2xl w-max">
+        <button id="reuseBtn" onclick="reuseModalParams()" class="bg-emerald-500/90 hover:bg-emerald-500 text-white px-4 md:px-5 py-2.5 rounded-xl shadow font-medium transition-all hidden border border-emerald-400/50 hover:scale-105 text-sm">✨ 复用参数</button>
+        <button onclick="uploadToRefFromModal()" class="bg-amber-500/90 hover:bg-amber-500 text-white px-4 md:px-5 py-2.5 rounded-xl shadow font-medium transition-all border border-amber-400/50 hover:scale-105 text-sm">🖼️ 设为参考图</button>
+        <button onclick="downloadModalImage()" class="bg-indigo-500/90 hover:bg-indigo-500 text-white px-4 md:px-5 py-2.5 rounded-xl shadow font-medium transition-all border border-indigo-400/50 hover:scale-105 text-sm">⬇️ 下载原图</button>
+    </div>
+</div>
+
+<style>
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.inputMain{border:1px solid #ccc;padding:8px;border-radius:6px;width:100%;}
+.btnMain{background:black;color:white;padding:10px;border-radius:6px;}
+.btnMain:disabled{background:#555;cursor:not-allowed;}
+.sortable-ghost { opacity: 0.3; background: #000; }
+.log-success{color:#22c55e;}
+.log-error{color:#ef4444;}
+.log-warning{color:#f59e0b;}
+.log-info{color:#4ade80;}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+.animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+</style>
+
+<script>
+const HOST="https://grsai.dakka.com.cn";
+const MAX_IMAGES=16, MAX_IMG_WIDTH=2048, MAX_HISTORY=500;
+let uploadedImagesBase64=[], uploadedImageUrls=[], historyImages = JSON.parse(localStorage.getItem('banana_history')) || [];
+let currentResultUrls = [], isTaskCancelled = false, currentModalItem = null, currentModalIndex = -1;
+
+function log(msg, type = "info") {
+    const area = document.getElementById("logArea");
+    if(!area) return;
+    const div = document.createElement("div");
+    div.className = "log-" + type + " mb-1";
+    div.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    area.appendChild(div);
+    area.scrollTop = area.scrollHeight;
+}
+
+function renderLogTaskCard(uniqueId, displayIdx) {
+    const area = document.getElementById("logArea");
+    if(!area) return;
+    const cardHTML = `
+        <div id="log-card-${uniqueId}" class="bg-gray-800 border border-gray-700 rounded p-2 flex flex-col gap-1.5 shadow">
+            <div class="flex justify-between items-center">
+                <span class="text-blue-400 font-bold text-[11px]">任务 ${displayIdx}</span>
+                <span id="log-status-${uniqueId}" class="text-yellow-400 text-[10px]">准备提交...</span>
+            </div>
+            <div id="log-id-${uniqueId}" class="text-[10px] text-gray-400 truncate">ID: 等待分配</div>
+            <div class="w-full bg-gray-900 rounded-full h-1.5 overflow-hidden">
+                <div id="log-progress-${uniqueId}" class="bg-blue-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+        </div>
+    `;
+    area.insertAdjacentHTML('beforeend', cardHTML);
+    area.scrollTop = area.scrollHeight;
+}
+
+function updateLogTaskCard(uniqueId, statusMsg, progress, taskId = null, isError = false) {
+    const statusEl = document.getElementById(`log-status-${uniqueId}`);
+    const progressEl = document.getElementById(`log-progress-${uniqueId}`);
+    const idEl = document.getElementById(`log-id-${uniqueId}`);
+    const cardEl = document.getElementById(`log-card-${uniqueId}`);
+    
+    if(!cardEl) return;
+
+    if(statusEl) {
+        statusEl.innerText = statusMsg;
+        if(isError) statusEl.className = "text-red-400 text-[10px]";
+        else if(progress === 100) statusEl.className = "text-green-400 text-[10px]";
+        else statusEl.className = "text-blue-300 text-[10px]";
+    }
+    if(progressEl && !isError) progressEl.style.width = `${progress}%`;
+    if(progressEl && isError) progressEl.className = "bg-red-500 h-1.5 rounded-full";
+    if(progressEl && progress === 100) progressEl.className = "bg-green-500 h-1.5 rounded-full";
+    if(idEl && taskId) idEl.innerText = `ID: ${taskId}`;
+}
+
+function renderResultSkeleton(uniqueId) {
+    const area = document.getElementById("resultArea");
+    if(!area) return;
+    const skeletonHTML = `
+        <div id="skeleton-${uniqueId}" class="relative w-full mb-4 break-inside-avoid aspect-[3/4] bg-gray-100 rounded-2xl flex flex-col items-center justify-center overflow-hidden border border-dashed border-gray-300 shadow-sm">
+            <div class="absolute inset-0 bg-gray-200/50 animate-pulse"></div>
+            <div class="relative z-10 flex flex-col items-center w-3/4">
+                <svg class="w-8 h-8 text-gray-400 mb-2 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <div class="text-xs font-semibold text-gray-500 mb-2 tracking-widest">生成中...</div>
+                <div class="w-full bg-gray-300 rounded-full h-1.5 overflow-hidden">
+                    <div id="skel-progress-${uniqueId}" class="bg-green-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <div id="skel-text-${uniqueId}" class="text-[10px] text-gray-500 mt-1 font-mono">0%</div>
+            </div>
+        </div>
+    `;
+    area.insertAdjacentHTML('beforeend', skeletonHTML);
+}
+
+function updateSkeletonProgress(uniqueId, progress, isError = false) {
+    const progEl = document.getElementById(`skel-progress-${uniqueId}`);
+    const textEl = document.getElementById(`skel-text-${uniqueId}`);
+    if(progEl && !isError) progEl.style.width = `${progress}%`;
+    if(textEl && !isError) textEl.innerText = `${progress}%`;
+    
+    if(isError && textEl) {
+        textEl.innerText = "生成失败";
+        textEl.className = "text-xs text-red-500 mt-1 font-bold";
+        if(progEl) progEl.className = "bg-red-500 h-1.5 rounded-full";
+        const skel = document.getElementById(`skeleton-${uniqueId}`);
+        if(skel) {
+            const pulse = skel.querySelector('.animate-pulse');
+            if(pulse) pulse.classList.remove('animate-pulse');
+        }
+    }
+}
+
+async function parseSafeJson(res) {
+    const text = await res.text();
+    if(!text) return null;
+    try {
+        return JSON.parse(text);
+    } catch(e) {
+        if(text.startsWith("data: ")) return JSON.parse(text.substring(6).trim());
+        throw new Error("无法解析的响应格式：" + text.substring(0, 50));
+    }
+}
+
+window.initSortable = function() {
+    const el = document.getElementById('previewArea');
+    if(!el) return;
+    Sortable.create(el, {
+        animation: 150, ghostClass: 'sortable-ghost',
+        onEnd: function(evt) {
+            const all = [...uploadedImagesBase64, ...uploadedImageUrls];
+            const [moved] = all.splice(evt.oldIndex, 1);
+            all.splice(evt.newIndex, 0, moved);
+            uploadedImagesBase64 = all.filter(s => s.startsWith('data:image'));
+            uploadedImageUrls = all.filter(s => !s.startsWith('data:image'));
+            renderPreview();
+        }
+    });
+};
+
+window.renderPreview = function() {
+    const area = document.getElementById("previewArea");
+    if(!area) return;
+    area.innerHTML = "";
+    const total = [...uploadedImagesBase64, ...uploadedImageUrls];
+    document.getElementById("refImageCount").innerText = `${total.length}/${MAX_IMAGES}`;
+    total.forEach((src, idx) => {
+        const wrap = document.createElement("div"); wrap.className = "relative cursor-move hover:scale-105 transition-transform";
+        const img = document.createElement("img"); img.src = src; img.className = "w-20 h-20 object-cover rounded-xl shadow-sm pointer-events-none border border-white/60";
+        const badge = document.createElement("span"); badge.innerText = idx + 1;
+        badge.className = "absolute top-1 left-1 bg-black/60 backdrop-blur text-white text-[10px] font-bold px-1.5 py-0.5 rounded pointer-events-none";
+        const btn = document.createElement("button"); btn.innerText = "✕";
+        btn.className = "absolute -top-2 -right-2 bg-rose-500/90 backdrop-blur hover:bg-rose-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center z-10 shadow-md transition-all border border-white/30";
+        btn.onclick = () => {
+            if (idx < uploadedImagesBase64.length) uploadedImagesBase64.splice(idx, 1);
+            else { uploadedImageUrls.splice(idx - uploadedImagesBase64.length, 1); document.getElementById("refUrls").value = uploadedImageUrls.join("\n"); }
+            renderPreview();
+        };
+        wrap.append(img, badge, btn); area.appendChild(wrap);
+    });
+};
+
+window.checkCredits = async function() {
+    const key = document.getElementById("apikey").value.trim();
+    if(!key) return log("API Key 为空","error");
+    localStorage.setItem('banana_apikey', key); 
+    try {
+        log("查询余额中...");
+        const res = await fetch(`${HOST}/client/openapi/getAPIKeyCredits`, {
+            method: "POST", headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({apiKey: key})
+        });
+        const d = await parseSafeJson(res);
+        if(d && d.code === 0) log("余额：" + (d.data.credits / 100).toFixed(2), "success");
+        else log("查询失败：" + (d ? d.msg : "未知原因"), "error");
+    } catch(err) { log("查询异常：" + err.message, "error"); }
+};
+
+window.generate = async function() {
+    const key = document.getElementById("apikey").value.trim();
+    if(!key) return log("API Key 为空", "error");
+    const count = getCount();
+    isTaskCancelled = false;
+    document.getElementById("resultArea").innerHTML = "";
+    currentResultUrls = [];
+    localStorage.setItem('banana_apikey', key);
+    
+    toggleTaskUI(true);
+    log(`==== 准备并发提交 ${count} 个任务 ====`, "info");
+    
+    const params = {
+        model: document.getElementById("model").value,
+        prompt: document.getElementById("prompt").value,
+        ratio: document.getElementById("ratio").value,
+        size: document.getElementById("imageSize").value
+    };
+
+    const promises = [];
+    for(let i = 1; i <= count; i++) {
+        const uniqueId = Date.now() + '-' + i;
+        renderResultSkeleton(uniqueId);
+        renderLogTaskCard(uniqueId, i); 
+        promises.push(submitSingleTask(key, uniqueId, i, params));
+    }
+    
+    await Promise.allSettled(promises);
+    if(!isTaskCancelled) log("==== 批量处理完毕 ====", "success");
+    toggleTaskUI(false);
+};
+
+async function submitSingleTask(key, uniqueId, displayIdx, p) {
+    if (isTaskCancelled) return;
+    try {
+        updateLogTaskCard(uniqueId, "正在提交请求...", 5);
+        updateSkeletonProgress(uniqueId, 5);
+        
+        const res = await fetch(`${HOST}/v1/draw/nano-banana`, {
+            method: "POST", headers: {"Content-Type":"application/json", "Authorization": "Bearer " + key},
+            body: JSON.stringify({
+                model: p.model, prompt: p.prompt, aspectRatio: p.ratio, imageSize: p.size,
+                count: 1, urls: [...uploadedImagesBase64, ...uploadedImageUrls],
+                webHook: "-1", shutProgress: false
+            })
+        });
+        const d = await parseSafeJson(res);
+        if(d && d.data) {
+            updateLogTaskCard(uniqueId, "排队/生成中...", 10, d.data.id);
+            updateSkeletonProgress(uniqueId, 10);
+            await pollResult(d.data.id, key, uniqueId, p);
+        } else {
+            const errMsg = d ? d.msg : "未知错误";
+            updateLogTaskCard(uniqueId, `提交失败: ${errMsg}`, 0, null, true);
+            updateSkeletonProgress(uniqueId, 0, true);
+        }
+    } catch(e) { 
+        if (!isTaskCancelled) {
+            updateLogTaskCard(uniqueId, `提交异常: ${e.message}`, 0, null, true);
+            updateSkeletonProgress(uniqueId, 0, true);
+        }
+    }
+}
+
+async function pollResult(id, key, uniqueId, p){
+    const iv = Number(document.getElementById("pollInterval").value) * 1000;
+    const to = Number(document.getElementById("pollTimeout").value) * 1000;
+    const start = Date.now();
+    while(!isTaskCancelled){
+        if(Date.now() - start > to) {
+            updateLogTaskCard(uniqueId, "等待超时", 0, id, true);
+            updateSkeletonProgress(uniqueId, 0, true);
+            return;
+        }
+        await new Promise(r => setTimeout(r, iv));
+        if(isTaskCancelled) return;
+        
+        try {
+            const res = await fetch(`${HOST}/v1/draw/result`, {
+                method: "POST", headers: {"Content-Type":"application/json", "Authorization": "Bearer " + key},
+                body: JSON.stringify({id: id})
+            });
+            const d = await parseSafeJson(res);
+            if(!d || !d.data) continue;
+            
+            const prog = d.data.progress || 10;
+            updateLogTaskCard(uniqueId, `渲染中 ${prog}%`, prog, id);
+            updateSkeletonProgress(uniqueId, prog);
+            
+            if(d.data.status === "succeeded"){
+                updateLogTaskCard(uniqueId, `生成成功`, 100, id);
+                d.data.results.forEach(r => { addResult(r.url, p, uniqueId); currentResultUrls.push(r.url); });
+                document.getElementById("downloadAllBtn").classList.remove("hidden");
+                return;
+            }
+            if(d.data.status === "failed") {
+                updateLogTaskCard(uniqueId, "生成失败", 0, id, true);
+                updateSkeletonProgress(uniqueId, 0, true);
+                return;
+            }
+        } catch(e) { 
+            updateLogTaskCard(uniqueId, `轮询异常`, 0, id, true);
+            updateSkeletonProgress(uniqueId, 0, true);
+        }
+    }
+}
+
+function addResult(url, p, uniqueId){
+    const record = { url, model: p.model, prompt: p.prompt, ratio: p.ratio, imageSize: p.size };
+    historyImages.unshift(record);
+    if(historyImages.length > MAX_HISTORY) historyImages = historyImages.slice(0, MAX_HISTORY);
+    localStorage.setItem('banana_history', JSON.stringify(historyImages));
+    renderHistory();
+    
+    const wrap = document.createElement("div");
+    wrap.className = "relative group mb-4 break-inside-avoid rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white";
+    
+    const img = document.createElement("img");
+    img.src = url; 
+    img.className = "w-full h-auto cursor-pointer transition-transform duration-700 group-hover:scale-105 animate-fade-in block";
+    img.loading = "lazy";   
+    img.decoding = "async"; 
+    img.onclick = () => openModal(record);
+
+    const overlay = document.createElement("div");
+    overlay.className = "absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none";
+
+    wrap.append(img, overlay);
+
+    const skeleton = document.getElementById(`skeleton-${uniqueId}`);
+    if(skeleton && skeleton.parentNode) {
+        skeleton.parentNode.replaceChild(wrap, skeleton);
+    } else {
+        document.getElementById("resultArea").appendChild(wrap);
+    }
+}
+
+function getFilteredHistory() {
+    const searchInput = document.getElementById("historySearch");
+    const keyword = searchInput ? searchInput.value.trim().toLowerCase() : "";
+    return historyImages.map((item, originalIndex) => ({ item, originalIndex })).filter(({item}) => {
+        if (!keyword) return true;
+        if (typeof item === 'object' && item.prompt) {
+            return item.prompt.toLowerCase().includes(keyword);
+        }
+        return false;
+    });
+}
+
+window.renderHistory = function() {
+    const area = document.getElementById("historyArea"); if(!area) return;
+    area.innerHTML = "";
+    
+    const filteredImages = getFilteredHistory();
+    
+    const searchInput = document.getElementById("historySearch");
+    const keyword = searchInput ? searchInput.value.trim() : "";
+    if (filteredImages.length === 0 && keyword) {
+        area.innerHTML = `<div class="col-span-2 lg:col-span-3 text-center text-gray-400 text-xs py-8">未找到包含 "${keyword}" 的记录</div>`;
+        return;
+    }
+
+    filteredImages.forEach(({item, originalIndex}) => {
+        const url = typeof item === 'string' ? item : item.url;
+        
+        const wrap = document.createElement("div"); 
+        wrap.className = "relative group mb-3 break-inside-avoid rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 bg-white";
+        
+        const img = document.createElement("img"); 
+        img.src = url; 
+        img.className = "w-full h-auto cursor-pointer transition-transform duration-500 group-hover:scale-105 block";
+        img.loading = "lazy";   
+        img.decoding = "async"; 
+        img.onclick = () => openModal(item);
+
+        const overlay = document.createElement("div");
+        overlay.className = "absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-black/30 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none";
+
+        const btn = document.createElement("button"); btn.innerText = "✕";
+        btn.className = "absolute top-2 right-2 bg-red-500/80 backdrop-blur hover:bg-red-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center shadow-md transition-all opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 border border-white/20";
+        btn.onclick = (e) => { 
+            e.stopPropagation(); 
+            historyImages.splice(originalIndex, 1); 
+            localStorage.setItem('banana_history', JSON.stringify(historyImages)); 
+            renderHistory(); 
+        };
+        wrap.append(img, overlay, btn); area.appendChild(wrap);
+    });
+};
+
+window.openModal = function(item) {
+    currentModalItem = item;
+    const url = typeof item === 'string' ? item : item.url;
+    
+    const filteredImages = getFilteredHistory();
+    currentModalIndex = filteredImages.findIndex(entry => {
+        const img = entry.item;
+        return (typeof img === 'string' ? img : img.url) === url;
+    });
+    
+    document.getElementById("modalImg").src = url;
+    document.getElementById("imageModal").classList.remove("hidden");
+    document.getElementById("prevArrow").classList.toggle("hidden", currentModalIndex <= 0);
+    document.getElementById("nextArrow").classList.toggle("hidden", currentModalIndex >= filteredImages.length - 1 || currentModalIndex === -1);
+    
+    const rb = document.getElementById("reuseBtn");
+    if (typeof item === 'object' && item !== null && item.model) {
+        rb.classList.remove("hidden");
+    } else {
+        rb.classList.add("hidden");
+    }
+};
+
+window.closeModal = function() { document.getElementById("imageModal").classList.add("hidden"); };
+window.prevModalImage = function() { 
+    const filteredImages = getFilteredHistory();
+    if(currentModalIndex > 0) openModal(filteredImages[--currentModalIndex].item); 
+};
+window.nextModalImage = function() { 
+    const filteredImages = getFilteredHistory();
+    if(currentModalIndex < filteredImages.length - 1) openModal(filteredImages[++currentModalIndex].item); 
+};
+
+window.reuseModalParams = function() {
+    if(!currentModalItem || typeof currentModalItem === 'string') return;
+    if(currentModalItem.prompt !== undefined) document.getElementById("prompt").value = currentModalItem.prompt;
+    if(currentModalItem.model) document.getElementById("model").value = currentModalItem.model;
+    if(currentModalItem.ratio) document.getElementById("ratio").value = currentModalItem.ratio;
+    if(currentModalItem.imageSize) document.getElementById("imageSize").value = currentModalItem.imageSize;
+    closeModal(); 
+    log("✅ 已成功复用该图的生成参数", "success");
+};
+
+/* ===== 新增：上传至参考素材 ===== */
+window.uploadToRefFromModal = async function() {
+    const url = document.getElementById("modalImg").src;
+    if(!url) return;
+    
+    if (uploadedImagesBase64.length + uploadedImageUrls.length >= MAX_IMAGES) {
+        alert("参考素材最多只能添加16张！");
+        return;
+    }
+
+    try {
+        // 尝试通过 fetch 获取图片并转为 Base64（保持原有的前端压缩与编码逻辑）
+        const res = await fetch(url); 
+        const blob = await res.blob();
+        const reader = new FileReader(); 
+        reader.onload = (ev) => {
+            const img = new Image();
+            img.onload = () => {
+                let w = img.width, h = img.height;
+                if (w > MAX_IMG_WIDTH) { h = Math.round((h * MAX_IMG_WIDTH) / w); w = MAX_IMG_WIDTH; }
+                const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                uploadedImagesBase64.push(canvas.toDataURL('image/jpeg', 0.92)); 
+                renderPreview();
+            };
+            img.src = ev.target.result;
+        }; 
+        reader.readAsDataURL(blob);
+    } catch(e) {
+        // 如果存在跨域等问题导致 fetch 失败，降级为直接推入 URL 列表
+        if(!uploadedImageUrls.includes(url)) {
+            uploadedImageUrls.push(url);
+            document.getElementById("refUrls").value = uploadedImageUrls.join("\n");
+            renderPreview();
+        }
+    }
+    
+    closeModal();
+    log("✅ 已将当前图片设为参考素材，可进行二次图生图修改", "success");
+    
+    // 视觉反馈：平滑滚动到顶部，并让预览区域高亮闪烁
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const previewArea = document.getElementById("previewArea");
+    previewArea.classList.add("ring-4", "ring-indigo-400", "scale-[1.02]", "transition-all", "duration-300");
+    setTimeout(() => previewArea.classList.remove("ring-4", "ring-indigo-400", "scale-[1.02]"), 600);
+};
+
+window.clearApiKey = function() {
+    if(confirm('确定彻底清除本地保存的 API Key？')) {
+        document.getElementById('apikey').value = '';
+        localStorage.removeItem('banana_apikey');
+        log("API Key 已清除", "info");
+    }
+};
+
+window.clearHistory = function() {
+    if(confirm("确定要清空所有历史记录吗？")) {
+        historyImages = []; localStorage.setItem('banana_history', "[]"); renderHistory();
+        log("历史记录已清空", "info");
+    }
+};
+
+window.exportHistory = function() {
+    if(historyImages.length === 0) return alert("当前无历史记录可导出");
+    const b = new Blob([JSON.stringify(historyImages, null, 2)], {type: "application/json"});
+    const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `Banana_Studio_History_${Date.now()}.json`; a.click();
+    log("已成功导出历史记录数据", "success");
+};
+
+window.importHistory = function(e) {
+    const f = e.target.files[0]; if(!f) return;
+    const r = new FileReader(); r.onload = (ev) => {
+        try { 
+            const d = JSON.parse(ev.target.result); 
+            if(Array.isArray(d)) { 
+                const currentUrls = new Set(historyImages.map(item => typeof item === 'string' ? item : item.url));
+                d.forEach(item => {
+                    const itemUrl = typeof item === 'string' ? item : item.url;
+                    if(!currentUrls.has(itemUrl)) { historyImages.push(item); currentUrls.add(itemUrl); }
+                });
+                if(historyImages.length > MAX_HISTORY) historyImages = historyImages.slice(0, MAX_HISTORY);
+                localStorage.setItem('banana_history', JSON.stringify(historyImages)); renderHistory(); 
+                log("成功导入并合并记录","success"); 
+            } 
+        } catch(e) { alert("文件解析失败"); }
+        e.target.value = '';
+    }; r.readAsText(f);
+};
+
+window.downloadModalImage = async function() {
+    const url = document.getElementById("modalImg").src;
+    try {
+        const res = await fetch(url); const blob = await res.blob();
+        const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `Nano_${Date.now()}.png`; a.click();
+    } catch(e) { window.open(url, '_blank'); }
+};
+
+window.downloadAllResults = async function() {
+    log("开始下载全部当前结果...");
+    for(let url of currentResultUrls) {
+        try {
+            const res = await fetch(url); const blob = await res.blob();
+            const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `Result_${Date.now()}.png`; a.click();
+            await new Promise(r => setTimeout(r, 400));
+        } catch(e) {}
+    }
+};
+
+function toggleTaskUI(isGen) {
+    const b1 = document.getElementById("generateBtn"), b2 = document.getElementById("cancelBtn");
+    b1.disabled = isGen; 
+    b1.innerHTML = isGen ? `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 疯狂渲染中...` : "✨ 开始生成";
+    isGen ? b2.classList.remove("hidden") : b2.classList.add("hidden");
+}
+
+window.cancelTask = function() { 
+    isTaskCancelled = true; 
+    toggleTaskUI(false); 
+    log("任务已手动取消", "warning");
+    
+    document.querySelectorAll('[id^="skeleton-"]').forEach(skel => {
+        const uniqueId = skel.id.substring(9); 
+        const statusText = document.getElementById(`skel-text-${uniqueId}`);
+        if(statusText && !statusText.innerText.includes('100%')) {
+            updateSkeletonProgress(uniqueId, 0, true);
+        }
+    });
+    
+    document.querySelectorAll('[id^="log-status-"]').forEach(statusEl => {
+        if(statusEl.innerText !== "生成成功" && !statusEl.innerText.includes("失败")) {
+            statusEl.innerText = "已手动取消";
+            statusEl.className = "text-red-400 text-[10px]";
+            statusEl.classList.remove('animate-pulse');
+            const uniqueId = statusEl.id.substring(11); 
+            const progEl = document.getElementById(`log-progress-${uniqueId}`);
+            if(progEl) progEl.className = "bg-red-500 h-1.5 rounded-full";
+        }
+    });
+};
+
+window.closeAnnouncement = function() { document.getElementById("announcementBar").classList.add("hidden"); };
+window.clearLog = function() { document.getElementById("logArea").innerHTML = ""; };
+
+function getCount(){
+    const s = document.getElementById("countSelect").value;
+    return s === "custom" ? Number(document.getElementById("customCount").value) || 1 : Number(s);
+}
+
+document.getElementById("refImages").addEventListener("change", function(e) {
+    const files = Array.from(e.target.files);
+    if (uploadedImagesBase64.length + uploadedImageUrls.length + files.length > MAX_IMAGES) return alert("最多16张");
+    files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const img = new Image();
+            img.onload = () => {
+                let w = img.width, h = img.height;
+                if (w > MAX_IMG_WIDTH) { h = Math.round((h * MAX_IMG_WIDTH) / w); w = MAX_IMG_WIDTH; }
+                const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                uploadedImagesBase64.push(canvas.toDataURL('image/jpeg', 0.92)); renderPreview();
+            };
+            img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+    e.target.value = "";
+});
+
+document.getElementById("refUrls").addEventListener("input", function(){
+    let urls = this.value.split("\n").map(v => v.trim()).filter(Boolean);
+    if (urls.length + uploadedImagesBase64.length > MAX_IMAGES) urls = urls.slice(0, MAX_IMAGES - uploadedImagesBase64.length);
+    uploadedImageUrls = urls; renderPreview();
+});
+
+async function fetchAnnouncement() {
+    try {
+        const data = { code: 0, data: { message: "📢 体验提升：现在可以随时将历史记录中的图片【一键设为参考图】，实现无缝的二次图生图创作！" } };
+        if (data.code === 0 && data.data.message) {
+            document.getElementById("announcementText").innerText = data.data.message;
+            document.getElementById("announcementBar").classList.remove("hidden");
+        }
+    } catch (err) {}
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    const k = localStorage.getItem('banana_apikey'); if(k) document.getElementById('apikey').value = k;
+    fetchAnnouncement(); renderPreview(); renderHistory(); initSortable();
+    document.getElementById("countSelect").addEventListener("change", e => { document.getElementById("customCount").classList.toggle("hidden", e.target.value !== "custom"); });
+});
+document.addEventListener('keydown', e => { if(!document.getElementById('imageModal').classList.contains('hidden')){ if(e.key==='ArrowLeft')prevModalImage(); if(e.key==='ArrowRight')nextModalImage(); if(e.key==='Escape')closeModal(); }});
+</script>
+</body>
+</html>

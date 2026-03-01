@@ -100,8 +100,8 @@
     .log-error{color: #f87171;}
     .log-warning{color: #fbbf24;}
     .log-info{color: #94a3b8;}
-    @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
-    .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
 </style>
 </head>
 
@@ -184,7 +184,7 @@
         </select>
     </div>
 
-    <input id="customCount" type="number" min="1" max="20" class="inputMain mb-5 hidden" placeholder="输入生成数量 (1-20)">
+    <input id="customCount" type="number" min="1" max="20" class="inputMain mb-5 hidden" placeholder="输入生成数量1-20">
 
     <div class="relative mb-5">
         <textarea id="prompt" class="inputMain pr-8 leading-relaxed" rows="4" placeholder="输入您的创作提示词..."></textarea>
@@ -194,10 +194,11 @@
     <h3 class="font-bold mb-3 flex items-center text-slate-700">
         <span class="text-[15px]">参考素材</span>
         <span id="refImageCount" class="text-xs text-indigo-700 font-bold mx-2 bg-indigo-100/80 px-2.5 py-0.5 rounded-full border border-indigo-200">0/16</span>
-        <span class="text-xs text-slate-400 font-normal tracking-tight">（支持拖拽排序，自动限制最大宽度2048px）</span>
+        <span class="text-xs text-slate-400 font-normal tracking-tight">（悬停出现编辑按钮 ✏️ 可涂鸦，支持拖拽排序）</span>
     </h3>
     <input type="file" id="refImages" multiple accept="image/*" class="inputMain mb-3 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-    <textarea id="refUrls" class="inputMain mb-4 text-sm" rows="2" placeholder="图片URL（换行分隔）"></textarea>
+    <textarea id="refUrls" class="inputMain mb-3" rows="2" placeholder="图片URL（换行分隔）"></textarea>
+    
     <div id="previewArea" class="flex flex-wrap gap-4 mb-6 min-h-[60px] p-2 bg-white/30 rounded-xl border border-dashed border-slate-300"></div>
 
     <div class="flex gap-4">
@@ -235,7 +236,7 @@
         <div class="flex justify-between items-center">
             <h3 class="font-semibold leading-tight">
                 <span class="text-base block">历史记录（上限500条）</span>
-                <span class="text-[11px] text-gray-400 font-normal tracking-tighter">时效2h(过期复用仍可用)</span>
+                <span class="text-[11px] text-gray-400 font-normal tracking-tighter">图片时效2h，请及时下载 (过期复用仍可用)</span>
             </h3>
             <div class="flex gap-2 items-center flex-shrink-0">
                 <button onclick="exportHistory()" class="text-xs text-blue-500 hover:text-blue-700">导出</button>
@@ -271,21 +272,47 @@
     </div>
 </div>
 
-<style>
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-.inputMain{border:1px solid #ccc;padding:8px;border-radius:6px;width:100%;}
-.btnMain{background:black;color:white;padding:10px;border-radius:6px;}
-.btnMain:disabled{background:#555;cursor:not-allowed;}
-.sortable-ghost { opacity: 0.3; background: #000; }
-.log-success{color:#22c55e;}
-.log-error{color:#ef4444;}
-.log-warning{color:#f59e0b;}
-.log-info{color:#4ade80;}
-@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-.animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-</style>
+<div id="editorModalWrapper" class="hidden fixed inset-0 bg-slate-900/85 backdrop-blur-xl flex flex-col items-center justify-center z-[60] transition-opacity">
+    <div class="bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-3xl w-[95%] max-w-4xl flex flex-col gap-5 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+        
+        <div class="flex justify-between items-center text-white">
+            <h3 class="font-bold text-xl flex items-center gap-2">🖌️ 参考素材涂鸦编辑器</h3>
+            <button onclick="closeEditor()" class="hover:text-rose-400 text-2xl font-bold transition-colors">✕</button>
+        </div>
+        
+        <div class="flex flex-wrap gap-3 items-center bg-black/40 p-3.5 rounded-2xl border border-white/10 text-sm text-white">
+            <button id="btnBrush" onclick="setEditorTool('brush')" class="bg-indigo-500 hover:bg-indigo-600 px-4 py-2 rounded-xl ring-2 ring-indigo-300 font-medium transition-all shadow">🖌️ 画笔</button>
+            <button id="btnEraser" onclick="setEditorTool('eraser')" class="bg-slate-600 hover:bg-slate-700 px-4 py-2 rounded-xl font-medium transition-all shadow">🧽 橡皮擦</button>
+            <div class="w-px h-6 bg-white/20 mx-1"></div>
+            
+            <label class="flex items-center gap-2 font-medium cursor-pointer">
+                颜色: <input type="color" id="brushColor" value="#ffffff" class="w-8 h-8 rounded cursor-pointer bg-transparent border-0">
+            </label>
+            <label class="flex items-center gap-2 font-medium cursor-pointer mr-2">
+                粗细: <input type="range" id="brushSize" min="1" max="100" value="20" class="w-20 cursor-pointer accent-indigo-500">
+            </label>
+            
+            <div class="w-px h-6 bg-white/20 mx-1 hidden sm:block"></div>
+            
+            <button id="btnUndo" onclick="undoEditor()" disabled class="bg-slate-600 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-2 rounded-xl font-medium transition-all shadow" title="返回上一步">↩️ 撤销</button>
+            <button id="btnRedo" onclick="redoEditor()" disabled class="bg-slate-600 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-2 rounded-xl font-medium transition-all shadow" title="返回下一步">↪️ 重做</button>
+
+            <button onclick="clearEditorCanvas()" class="bg-rose-500/80 hover:bg-rose-600 px-4 py-2 rounded-xl font-medium transition-all sm:ml-auto shadow">🗑️ 擦除重置</button>
+        </div>
+        
+        <div class="relative w-full rounded-2xl bg-black/60 border border-white/10 flex justify-center items-center p-3 overflow-hidden shadow-inner" style="height: 60vh;">
+            <div class="relative max-w-full max-h-full inline-block" id="canvasContainer">
+                <canvas id="bgCanvas" class="block max-w-full max-h-[55vh] w-auto h-auto rounded pointer-events-none shadow-md object-contain"></canvas>
+                <canvas id="editorCanvas" class="absolute top-0 left-0 max-w-full max-h-[55vh] w-full h-full cursor-crosshair touch-none rounded"></canvas>
+            </div>
+        </div>
+        
+        <div class="flex justify-end gap-4 mt-1">
+            <button onclick="closeEditor()" class="px-6 py-2.5 rounded-xl bg-slate-600/80 hover:bg-slate-600 border border-white/10 text-white font-medium transition-all">取消修改</button>
+            <button onclick="saveEditor()" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 shadow-lg text-white font-bold transition-all hover:scale-105">✅ 保存涂鸦</button>
+        </div>
+    </div>
+</div>
 
 <script>
 const HOST="https://grsai.dakka.com.cn";
@@ -293,11 +320,225 @@ const MAX_IMAGES=16, MAX_IMG_WIDTH=2048, MAX_HISTORY=500;
 let uploadedImagesBase64=[], uploadedImageUrls=[], historyImages = JSON.parse(localStorage.getItem('banana_history')) || [];
 let currentResultUrls = [], isTaskCancelled = false, currentModalItem = null, currentModalIndex = -1;
 
+/* ===== 参考图编辑器逻辑 (带时光机撤销重做功能) ===== */
+let bgCanvas, editorCanvas, bgCtx, editorCtx;
+let editIndex = -1;
+let isDrawing = false;
+let currentTool = 'brush';
+
+// 新增历史记录栈
+let undoStack = [];
+let redoStack = [];
+
+// 保存当前涂鸦板的状态
+function saveEditorState() {
+    if (!editorCanvas) return;
+    // 获取透明图层并放入撤销栈
+    undoStack.push(editorCanvas.toDataURL("image/png"));
+    
+    // 内存保护：最多保存 30 步，防止高分辨率图片撑爆浏览器内存
+    if (undoStack.length > 30) undoStack.shift(); 
+    
+    // 只要有新动作，重做栈清空
+    redoStack = []; 
+    updateUndoRedoButtons();
+}
+
+// 刷新撤销和重做按钮的可用状态
+function updateUndoRedoButtons() {
+    const btnUndo = document.getElementById("btnUndo");
+    const btnRedo = document.getElementById("btnRedo");
+    if(btnUndo) btnUndo.disabled = undoStack.length <= 1; // 至少保留一个初始空白页
+    if(btnRedo) btnRedo.disabled = redoStack.length === 0;
+}
+
+// 撤销：返回上一步
+function undoEditor() {
+    if (undoStack.length > 1) {
+        // 把当前的图推给重做栈
+        redoStack.push(undoStack.pop()); 
+        // 恢复成上一个状态
+        restoreEditorState(undoStack[undoStack.length - 1]);
+    }
+}
+
+// 重做：返回下一步
+function redoEditor() {
+    if (redoStack.length > 0) {
+        const state = redoStack.pop();
+        undoStack.push(state);
+        restoreEditorState(state);
+    }
+}
+
+// 根据记录的图片重新绘制透明涂鸦层
+function restoreEditorState(dataUrl) {
+    const img = new Image();
+    img.onload = () => {
+        const prevGCO = editorCtx.globalCompositeOperation;
+        // 必须切换回覆盖模式才能把图片画上去（防止在橡皮擦模式下出 bug）
+        editorCtx.globalCompositeOperation = "source-over"; 
+        editorCtx.clearRect(0, 0, editorCanvas.width, editorCanvas.height);
+        editorCtx.drawImage(img, 0, 0);
+        
+        // 恢复你刚刚选择的画笔或橡皮擦模式
+        editorCtx.globalCompositeOperation = prevGCO; 
+        updateUndoRedoButtons();
+    };
+    img.src = dataUrl;
+}
+
+function initEditor() {
+    bgCanvas = document.getElementById("bgCanvas");
+    editorCanvas = document.getElementById("editorCanvas");
+    bgCtx = bgCanvas.getContext("2d");
+    editorCtx = editorCanvas.getContext("2d", { willReadFrequently: true }); // 优化性能
+
+    const startDraw = (e) => {
+        isDrawing = true;
+        editorCtx.beginPath();
+        draw(e);
+    };
+
+    const draw = (e) => {
+        if (!isDrawing) return;
+        e.preventDefault();
+        
+        const rect = editorCanvas.getBoundingClientRect();
+        const scaleX = editorCanvas.width / rect.width;
+        const scaleY = editorCanvas.height / rect.height;
+        
+        let clientX = e.clientX || (e.touches && e.touches[0].clientX);
+        let clientY = e.clientY || (e.touches && e.touches[0].clientY);
+        
+        const x = (clientX - rect.left) * scaleX;
+        const y = (clientY - rect.top) * scaleY;
+
+        editorCtx.lineWidth = document.getElementById("brushSize").value;
+        editorCtx.lineCap = "round";
+        editorCtx.lineJoin = "round";
+
+        if (currentTool === 'eraser') {
+            editorCtx.globalCompositeOperation = "destination-out";
+            editorCtx.strokeStyle = "rgba(0,0,0,1)"; 
+        } else {
+            editorCtx.globalCompositeOperation = "source-over";
+            editorCtx.strokeStyle = document.getElementById("brushColor").value;
+        }
+
+        editorCtx.lineTo(x, y);
+        editorCtx.stroke();
+        editorCtx.beginPath();
+        editorCtx.moveTo(x, y);
+    };
+
+    const stopDraw = () => {
+        if (isDrawing) {
+            isDrawing = false;
+            editorCtx.beginPath();
+            // 画完一笔，保存当前状态到历史栈中
+            saveEditorState();
+        }
+    };
+
+    editorCanvas.addEventListener("mousedown", startDraw);
+    editorCanvas.addEventListener("mousemove", draw);
+    editorCanvas.addEventListener("mouseup", stopDraw);
+    editorCanvas.addEventListener("mouseout", stopDraw);
+    
+    editorCanvas.addEventListener("touchstart", startDraw, {passive: false});
+    editorCanvas.addEventListener("touchmove", draw, {passive: false});
+    editorCanvas.addEventListener("touchend", stopDraw);
+    editorCanvas.addEventListener("touchcancel", stopDraw);
+}
+
+function setEditorTool(tool) {
+    currentTool = tool;
+    document.getElementById("btnBrush").classList.toggle("ring-2", tool === 'brush');
+    document.getElementById("btnBrush").classList.toggle("ring-indigo-300", tool === 'brush');
+    document.getElementById("btnEraser").classList.toggle("ring-2", tool === 'eraser');
+    document.getElementById("btnEraser").classList.toggle("ring-slate-300", tool === 'eraser');
+}
+
+function clearEditorCanvas(recordHistory = true) {
+    editorCtx.clearRect(0, 0, editorCanvas.width, editorCanvas.height);
+    // 清空操作也是一种绘画行为，如果允许的话加入到撤销栈里
+    if (recordHistory) {
+        saveEditorState();
+    }
+}
+
+function openEditor(idx) {
+    editIndex = idx;
+    const totalImgs = [...uploadedImagesBase64, ...uploadedImageUrls];
+    const src = totalImgs[idx];
+    
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+        document.getElementById("editorModalWrapper").classList.remove("hidden");
+        bgCanvas.width = img.width;
+        bgCanvas.height = img.height;
+        editorCanvas.width = img.width;
+        editorCanvas.height = img.height;
+        
+        bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+        bgCtx.drawImage(img, 0, 0);
+        
+        // 进去后强制清空涂鸦层，并且不记录这次清空
+        clearEditorCanvas(false);
+        
+        // 重置撤销重做栈，并保存初始的【空白透明图层】
+        undoStack = [];
+        redoStack = [];
+        saveEditorState();
+    };
+    img.onerror = () => {
+        alert("⚠️ 无法加载此图片进行编辑。可能是由于该URL图片具有跨域保护限制，建议您先将其保存到本地，重新上传后再进行涂鸦。");
+    };
+    img.src = src;
+}
+
+function saveEditor() {
+    try {
+        const mergeCanvas = document.createElement("canvas");
+        mergeCanvas.width = bgCanvas.width;
+        mergeCanvas.height = bgCanvas.height;
+        const mCtx = mergeCanvas.getContext("2d");
+        
+        mCtx.drawImage(bgCanvas, 0, 0);
+        mCtx.drawImage(editorCanvas, 0, 0);
+        
+        const dataUrl = mergeCanvas.toDataURL("image/jpeg", 0.92);
+        
+        if (editIndex < uploadedImagesBase64.length) {
+            uploadedImagesBase64[editIndex] = dataUrl;
+        } else {
+            uploadedImageUrls.splice(editIndex - uploadedImagesBase64.length, 1);
+            uploadedImagesBase64.push(dataUrl);
+            document.getElementById("refUrls").value = uploadedImageUrls.join("\n");
+        }
+        
+        renderPreview();
+        closeEditor();
+        log("✅ 参考素材涂鸦保存成功", "success");
+    } catch(e) {
+        alert("保存失败：浏览器安全策略拦截了图片数据导出。");
+    }
+}
+
+function closeEditor() {
+    document.getElementById("editorModalWrapper").classList.add("hidden");
+    editIndex = -1;
+}
+
+/* ===== 核心工具函数 ===== */
+
 function log(msg, type = "info") {
     const area = document.getElementById("logArea");
     if(!area) return;
     const div = document.createElement("div");
-    div.className = "log-" + type + " mb-1";
+    div.className = "log-" + type + " mb-1 tracking-wider";
     div.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
     area.appendChild(div);
     area.scrollTop = area.scrollHeight;
@@ -307,14 +548,14 @@ function renderLogTaskCard(uniqueId, displayIdx) {
     const area = document.getElementById("logArea");
     if(!area) return;
     const cardHTML = `
-        <div id="log-card-${uniqueId}" class="bg-gray-800 border border-gray-700 rounded p-2 flex flex-col gap-1.5 shadow">
+        <div id="log-card-${uniqueId}" class="bg-slate-800/50 border border-slate-600/40 backdrop-blur-md rounded-xl p-3 flex flex-col gap-2 shadow transition-all duration-300">
             <div class="flex justify-between items-center">
-                <span class="text-blue-400 font-bold text-[11px]">任务 ${displayIdx}</span>
-                <span id="log-status-${uniqueId}" class="text-yellow-400 text-[10px]">准备提交...</span>
+                <span class="text-indigo-300 font-bold text-[12px] bg-indigo-500/20 px-2 py-0.5 rounded">任务 ${displayIdx}</span>
+                <span id="log-status-${uniqueId}" class="text-amber-400 text-[11px] font-medium animate-pulse">准备提交...</span>
             </div>
-            <div id="log-id-${uniqueId}" class="text-[10px] text-gray-400 truncate">ID: 等待分配</div>
-            <div class="w-full bg-gray-900 rounded-full h-1.5 overflow-hidden">
-                <div id="log-progress-${uniqueId}" class="bg-blue-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+            <div id="log-id-${uniqueId}" class="text-[10px] text-slate-400/80 truncate font-mono">ID: 等待分配</div>
+            <div class="w-full bg-slate-900/80 rounded-full h-1.5 overflow-hidden shadow-inner border border-slate-700/50">
+                <div id="log-progress-${uniqueId}" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
             </div>
         </div>
     `;
@@ -332,13 +573,17 @@ function updateLogTaskCard(uniqueId, statusMsg, progress, taskId = null, isError
 
     if(statusEl) {
         statusEl.innerText = statusMsg;
-        if(isError) statusEl.className = "text-red-400 text-[10px]";
-        else if(progress === 100) statusEl.className = "text-green-400 text-[10px]";
-        else statusEl.className = "text-blue-300 text-[10px]";
+        statusEl.classList.remove('animate-pulse');
+        if(isError) statusEl.className = "text-rose-400 text-[11px] font-medium";
+        else if(progress === 100) statusEl.className = "text-emerald-400 text-[11px] font-bold";
+        else {
+            statusEl.className = "text-indigo-300 text-[11px] font-medium";
+            if(progress > 0 && progress < 100) statusEl.classList.add('animate-pulse');
+        }
     }
     if(progressEl && !isError) progressEl.style.width = `${progress}%`;
-    if(progressEl && isError) progressEl.className = "bg-red-500 h-1.5 rounded-full";
-    if(progressEl && progress === 100) progressEl.className = "bg-green-500 h-1.5 rounded-full";
+    if(progressEl && isError) progressEl.className = "bg-rose-500 h-full rounded-full";
+    if(progressEl && progress === 100) progressEl.className = "bg-emerald-500 h-full rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]";
     if(idEl && taskId) idEl.innerText = `ID: ${taskId}`;
 }
 
@@ -372,7 +617,7 @@ function updateSkeletonProgress(uniqueId, progress, isError = false) {
     
     if(isError && textEl) {
         textEl.innerText = "生成失败";
-        textEl.className = "text-xs text-red-500 mt-1 font-bold";
+        textEl.className = "text-xs text-rose-500 mt-1 font-bold";
         if(progEl) progEl.className = "bg-red-500 h-1.5 rounded-full";
         const skel = document.getElementById(`skeleton-${uniqueId}`);
         if(skel) {
@@ -415,19 +660,40 @@ window.renderPreview = function() {
     area.innerHTML = "";
     const total = [...uploadedImagesBase64, ...uploadedImageUrls];
     document.getElementById("refImageCount").innerText = `${total.length}/${MAX_IMAGES}`;
+    
     total.forEach((src, idx) => {
-        const wrap = document.createElement("div"); wrap.className = "relative cursor-move hover:scale-105 transition-transform";
-        const img = document.createElement("img"); img.src = src; img.className = "w-20 h-20 object-cover rounded-xl shadow-sm pointer-events-none border border-white/60";
-        const badge = document.createElement("span"); badge.innerText = idx + 1;
+        const wrap = document.createElement("div"); 
+        wrap.className = "relative cursor-move hover:scale-[1.03] transition-transform group";
+        
+        const img = document.createElement("img"); 
+        img.src = src; 
+        img.className = "w-20 h-20 object-cover rounded-xl shadow-sm pointer-events-none border border-white/60";
+        
+        const badge = document.createElement("span"); 
+        badge.innerText = idx + 1;
         badge.className = "absolute top-1 left-1 bg-black/60 backdrop-blur text-white text-[10px] font-bold px-1.5 py-0.5 rounded pointer-events-none";
-        const btn = document.createElement("button"); btn.innerText = "✕";
-        btn.className = "absolute -top-2 -right-2 bg-rose-500/90 backdrop-blur hover:bg-rose-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center z-10 shadow-md transition-all border border-white/30";
-        btn.onclick = () => {
+        
+        const btnDelete = document.createElement("button"); 
+        btnDelete.innerText = "✕";
+        btnDelete.className = "absolute -top-2 -right-2 bg-rose-500/90 backdrop-blur hover:bg-rose-600 text-white text-[10px] rounded-full w-5 h-5 flex items-center justify-center z-10 shadow-md transition-all opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 border border-white/30";
+        btnDelete.onclick = (e) => {
+            e.stopPropagation();
             if (idx < uploadedImagesBase64.length) uploadedImagesBase64.splice(idx, 1);
             else { uploadedImageUrls.splice(idx - uploadedImagesBase64.length, 1); document.getElementById("refUrls").value = uploadedImageUrls.join("\n"); }
             renderPreview();
         };
-        wrap.append(img, badge, btn); area.appendChild(wrap);
+
+        const btnEdit = document.createElement("button");
+        btnEdit.innerText = "✏️";
+        btnEdit.title = "点击涂鸦编辑";
+        btnEdit.className = "absolute -bottom-1 -left-1 bg-indigo-500/90 backdrop-blur hover:bg-indigo-600 text-white text-[12px] rounded-full w-6 h-6 flex items-center justify-center z-10 shadow-md transition-all opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 border border-white/30";
+        btnEdit.onclick = (e) => {
+            e.stopPropagation();
+            openEditor(idx);
+        };
+
+        wrap.append(img, badge, btnDelete, btnEdit); 
+        area.appendChild(wrap);
     });
 };
 
@@ -442,7 +708,7 @@ window.checkCredits = async function() {
             body: JSON.stringify({apiKey: key})
         });
         const d = await parseSafeJson(res);
-        if(d && d.code === 0) log("余额：" + (d.data.credits / 100).toFixed(2), "success");
+        if(d && d.code === 0) log("余额：" + (d.data.credits / 200).toFixed(2), "success");
         else log("查询失败：" + (d ? d.msg : "未知原因"), "error");
     } catch(err) { log("查询异常：" + err.message, "error"); }
 };
@@ -605,7 +871,7 @@ window.renderHistory = function() {
     const searchInput = document.getElementById("historySearch");
     const keyword = searchInput ? searchInput.value.trim() : "";
     if (filteredImages.length === 0 && keyword) {
-        area.innerHTML = `<div class="col-span-2 lg:col-span-3 text-center text-gray-400 text-xs py-8">未找到包含 "${keyword}" 的记录</div>`;
+        area.innerHTML = `<div class="col-span-2 lg:col-span-3 text-center text-slate-400 font-medium text-sm py-8 bg-white/30 rounded-xl border border-dashed border-slate-300">🔍 未找到包含 "${keyword}" 的记录</div>`;
         return;
     }
 
@@ -680,7 +946,6 @@ window.reuseModalParams = function() {
     log("✅ 已成功复用该图的生成参数", "success");
 };
 
-/* ===== 新增：上传至参考素材 ===== */
 window.uploadToRefFromModal = async function() {
     const url = document.getElementById("modalImg").src;
     if(!url) return;
@@ -691,7 +956,6 @@ window.uploadToRefFromModal = async function() {
     }
 
     try {
-        // 尝试通过 fetch 获取图片并转为 Base64（保持原有的前端压缩与编码逻辑）
         const res = await fetch(url); 
         const blob = await res.blob();
         const reader = new FileReader(); 
@@ -709,7 +973,6 @@ window.uploadToRefFromModal = async function() {
         }; 
         reader.readAsDataURL(blob);
     } catch(e) {
-        // 如果存在跨域等问题导致 fetch 失败，降级为直接推入 URL 列表
         if(!uploadedImageUrls.includes(url)) {
             uploadedImageUrls.push(url);
             document.getElementById("refUrls").value = uploadedImageUrls.join("\n");
@@ -718,9 +981,7 @@ window.uploadToRefFromModal = async function() {
     }
     
     closeModal();
-    log("✅ 已将当前图片设为参考素材，可进行二次图生图修改", "success");
-    
-    // 视觉反馈：平滑滚动到顶部，并让预览区域高亮闪烁
+    log("✅ 已将当前图片设为参考素材", "success");
     window.scrollTo({ top: 0, behavior: 'smooth' });
     const previewArea = document.getElementById("previewArea");
     previewArea.classList.add("ring-4", "ring-indigo-400", "scale-[1.02]", "transition-all", "duration-300");
@@ -857,7 +1118,7 @@ document.getElementById("refUrls").addEventListener("input", function(){
 
 async function fetchAnnouncement() {
     try {
-        const data = { code: 0, data: { message: "📢 体验提升：现在可以随时将历史记录中的图片【一键设为参考图】，实现无缝的二次图生图创作！" } };
+        const data = { code: 0, data: { message: "📢 体验提升：涂鸦编辑器已加入『撤销与重做』时光机，轻松修补每一次误涂！" } };
         if (data.code === 0 && data.data.message) {
             document.getElementById("announcementText").innerText = data.data.message;
             document.getElementById("announcementBar").classList.remove("hidden");
@@ -868,9 +1129,17 @@ async function fetchAnnouncement() {
 window.addEventListener('DOMContentLoaded', () => {
     const k = localStorage.getItem('banana_apikey'); if(k) document.getElementById('apikey').value = k;
     fetchAnnouncement(); renderPreview(); renderHistory(); initSortable();
+    initEditor(); 
     document.getElementById("countSelect").addEventListener("change", e => { document.getElementById("customCount").classList.toggle("hidden", e.target.value !== "custom"); });
 });
-document.addEventListener('keydown', e => { if(!document.getElementById('imageModal').classList.contains('hidden')){ if(e.key==='ArrowLeft')prevModalImage(); if(e.key==='ArrowRight')nextModalImage(); if(e.key==='Escape')closeModal(); }});
+
+document.addEventListener('keydown', e => { 
+    if(!document.getElementById('imageModal').classList.contains('hidden')){ 
+        if(e.key==='ArrowLeft')prevModalImage(); 
+        if(e.key==='ArrowRight')nextModalImage(); 
+        if(e.key==='Escape')closeModal(); 
+    }
+});
 </script>
 </body>
 </html>

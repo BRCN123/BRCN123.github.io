@@ -35,22 +35,39 @@
         box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.4);
     }
 
-    /* 拟态输入框 */
+    /* ================= 【核心优化】拟态输入框视觉升级 ================= */
     .inputMain {
-        background: rgba(255, 255, 255, 0.5);
-        border: 1px solid rgba(255, 255, 255, 0.8);
-        padding: 10px 14px;
+        background: rgba(255, 255, 255, 0.85); /* 提高不透明度，脱离背景 */
+        border: 1px solid rgba(203, 213, 225, 0.8); /* 增加清晰的边框界线 */
+        padding: 12px 16px;
         border-radius: 12px;
         width: 100%;
         outline: none;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         color: #334155;
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 1px 2px rgba(0,0,0,0.02); /* 强化立体感 */
+    }
+    .inputMain:hover {
+        background: rgba(255, 255, 255, 1);
+        border-color: #cbd5e1;
     }
     .inputMain:focus {
-        background: rgba(255, 255, 255, 0.9);
+        background: #ffffff;
         border-color: #818cf8;
         box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.2), inset 0 1px 2px rgba(0,0,0,0.01);
+    }
+
+    /* 【核心优化】让下拉框自带明确的箭头指示 */
+    select.inputMain {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 0.75rem center;
+        background-repeat: no-repeat;
+        background-size: 1.25em 1.25em;
+        padding-right: 2.5rem;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        cursor: pointer;
     }
 
     /* 渐变拟态按钮 */
@@ -96,7 +113,6 @@
     ::-webkit-scrollbar-thumb { background: rgba(203, 213, 225, 0.8); border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.8); }
     
-    /* 隐藏特定区域的滚动条但保持可滑动 */
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
@@ -133,7 +149,7 @@
         <svg class="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
-        <span class="text-sm text-emerald-900 font-medium">积分换算：100积分=3元，充值请联系作者！（WX：lp01291070），高峰期因模型问题导致生图失败会返还积分，如遇网络波动等其他问题导致任务中断，积分被扣除，可通过日志中的任务ID找回图片，</span>
+        <span class="text-sm text-emerald-900 font-medium">积分换算：100积分=3元，充值请联系作者！（WX：lp01291070），另有ComfyUI用户也可提供对应的插件，Key通用</span>
     </div>
     <button onclick="document.getElementById('rechargeBar').classList.add('hidden')" class="text-emerald-400 hover:text-emerald-600 font-bold ml-4">✕</button>
 </div>
@@ -142,77 +158,98 @@
 
 <div class="lg:col-span-2 space-y-6">
 
-<div class="glass-card p-7 rounded-3xl">
-    <h2 class="text-2xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">PH Nano Banana AI Studio</h2>
+<div class="glass-card p-7 rounded-3xl flex flex-col gap-6">
+    <h2 class="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 border-b border-indigo-100 pb-4">PH Nano Banana AI Studio</h2>
 
-    <div class="flex gap-4 mb-5 items-center">
-        <div class="relative flex-1">
-            <input type="password" id="apikey" class="inputMain pr-8" placeholder="填写您的 API Key">
-            <button onclick="clearApiKey()" class="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-400 hover:text-indigo-500 bg-white/50 backdrop-blur rounded-full w-6 h-6 flex items-center justify-center shadow-sm border border-white transition-all" title="彻底清除本地保存的 API Key">✕</button>
+    <div>
+        <label class="block text-xs font-bold text-slate-500 mb-2 ml-1 tracking-wider uppercase">🔑 API Key 设置</label>
+        <div class="flex gap-3 items-stretch">
+            <div class="relative flex-1">
+                <input type="password" id="apikey" class="inputMain pr-10" placeholder="填写您的 API Key">
+                <button onclick="clearApiKey()" class="absolute top-1/2 right-2 transform -translate-y-1/2 text-slate-400 hover:text-rose-500 bg-slate-100 hover:bg-rose-50 rounded-full w-7 h-7 flex items-center justify-center transition-all border border-slate-200 shadow-sm" title="彻底清除本地保存的 API Key">✕</button>
+            </div>
+            <button onclick="checkCredits()" class="btnMain whitespace-nowrap flex-shrink-0 px-6 bg-slate-800 shadow-md">查询余额</button>
         </div>
-        <button onclick="checkCredits()" class="btnMain whitespace-nowrap flex-shrink-0 px-6 bg-slate-800 shadow-md">查询余额</button>
     </div>
 
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-        <select id="model" class="inputMain font-medium text-sm">
-            <option value="nano-banana-2">banana 2--6.5积分</option>
-            <option value="nano-banana-fast">banana 1--2.2积分</option>
-            <option value="nano-banana-pro">banana pro--9积分</option>
-            <option value="nano-banana-pro-vt">banana pro-v--9积分</option>
-            <option value="nano-banana-pro-cl">banana pro-c--17积分（质量最高）</option>
-        </select>
-        <select id="ratio" class="inputMain font-medium text-sm">
-            <option value="auto">auto</option>
-            <option value="1:1">1:1</option>
-            <option value="16:9">16:9</option>
-            <option value="9:16">9:16</option>
-            <option value="4:3">4:3</option>
-            <option value="3:4">3:4</option>
-            <option value="3:2">3:2</option>
-            <option value="2:3">2:3</option>
-            <option value="5:4">5:4</option>
-            <option value="4:5">4:5</option>
-            <option value="21:9">21:9</option>
-            <option value="4:1">4:1 - banana-2专属</option>
-            <option value="1:4">1:4 - banana-2专属</option>
-            <option value="8:1">8:1 - banana-2专属</option>
-            <option value="1:8">1:8 - banana-2专属</option>
-        </select>
-        <select id="imageSize" class="inputMain font-medium text-sm">
-            <option value="1K">1K</option>
-            <option value="2K">2K</option>
-            <option value="4K">4K</option>
-            <option value="0.5K">0.5K - banana-2专属</option>
-        </select>
-        <select id="countSelect" class="inputMain font-medium text-sm">
-            <option value="1">1 张</option>
-            <option value="2">2 张</option>
-            <option value="3">3 张</option>
-            <option value="4">4 张</option>
-            <option value="custom">自定义</option>
-        </select>
+    <div class="bg-white/40 p-5 rounded-2xl border border-white/60 shadow-[inset_0_2px_10px_rgba(255,255,255,0.4)]">
+        <label class="block text-xs font-bold text-indigo-500 mb-3 ml-1 tracking-wider uppercase">⚙️ 生成参数</label>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="flex flex-col gap-1.5">
+                <span class="text-[11px] font-semibold text-slate-500 pl-1">模型 (Model)</span>
+                <select id="model" class="inputMain font-medium text-sm">
+                    <option value="nano-banana-2">banana-2--6.5积分</option>
+                    <option value="nano-banana-fast">banana-1--2.2积分</option>
+                    <option value="nano-banana-pro">banana-1-pro--9积分</option>
+                    <option value="nano-banana-pro-vt">banana-1-v--9积分</option>
+                    <option value="nano-banana-pro-cl">banana-1-c--17积分（质量最高）</option>
+                </select>
+            </div>
+            <div class="flex flex-col gap-1.5">
+                <span class="text-[11px] font-semibold text-slate-500 pl-1">比例 (Ratio)</span>
+                <select id="ratio" class="inputMain font-medium text-sm">
+                    <option value="auto">auto</option>
+                    <option value="1:1">1:1</option>
+                    <option value="16:9">16:9</option>
+                    <option value="9:16">9:16</option>
+                    <option value="4:3">4:3</option>
+                    <option value="3:4">3:4</option>
+                    <option value="21:9">21:9</option>
+                    <option value="4:1">4:1 - banana-2专属</option>
+                    <option value="1:4">1:4 - banana-2专属</option>
+                    <option value="8:1">8:1 - banana-2专属</option>
+                    <option value="1:8">1:8 - banana-2专属</option>
+                </select>
+            </div>
+            <div class="flex flex-col gap-1.5">
+                <span class="text-[11px] font-semibold text-slate-500 pl-1">尺寸 (Size)</span>
+                <select id="imageSize" class="inputMain font-medium text-sm">
+                    <option value="1K">1K</option>
+                    <option value="2K">2K</option>
+                    <option value="4K">4K</option>
+                    <option value="0.5K">0.5K - banana-2专属</option>
+                </select>
+            </div>
+            <div class="flex flex-col gap-1.5">
+                <span class="text-[11px] font-semibold text-slate-500 pl-1">数量 (Count)</span>
+                <select id="countSelect" class="inputMain font-medium text-sm">
+                    <option value="1">1 张</option>
+                    <option value="2">2 张</option>
+                    <option value="3">3 张</option>
+                    <option value="4">4 张</option>
+                    <option value="custom">自定义</option>
+                </select>
+            </div>
+        </div>
+        <input id="customCount" type="number" min="1" max="20" class="inputMain mt-4 hidden" placeholder="输入自定义生成数量 (1-20)">
     </div>
 
-    <input id="customCount" type="number" min="1" max="20" class="inputMain mb-5 hidden" placeholder="输入生成数量1-20">
-
-    <div class="relative mb-5">
-        <textarea id="prompt" class="inputMain pr-8 leading-relaxed" rows="4" placeholder="输入您的创作提示词..."></textarea>
-        <button onclick="if(confirm('确定要清空提示词吗？')) document.getElementById('prompt').value=''" class="absolute top-3 right-3 text-gray-400 hover:text-indigo-500 bg-white/50 backdrop-blur rounded-full w-6 h-6 flex items-center justify-center shadow-sm border border-white transition-all" title="清空提示词">✕</button>
+    <div>
+        <label class="block text-xs font-bold text-slate-500 mb-2 ml-1 tracking-wider uppercase">📝 提示词 (Prompt)</label>
+        <div class="relative">
+            <textarea id="prompt" class="inputMain pr-10 leading-relaxed resize-y shadow-sm" rows="4" placeholder="在此输入您的创作提示词，描述画面的细节要素..."></textarea>
+            <button onclick="if(confirm('确定要清空提示词吗？')) document.getElementById('prompt').value=''" class="absolute top-3 right-3 text-slate-400 hover:text-rose-500 bg-slate-100 hover:bg-rose-50 rounded-full w-7 h-7 flex items-center justify-center transition-all shadow-sm border border-slate-200" title="清空提示词">✕</button>
+        </div>
     </div>
 
-    <h3 class="font-bold mb-3 flex items-center text-slate-700">
-        <span class="text-[15px]">参考素材</span>
-        <span id="refImageCount" class="text-xs text-indigo-700 font-bold mx-2 bg-indigo-100/80 px-2.5 py-0.5 rounded-full border border-indigo-200">0/16</span>
-        <span class="text-xs text-slate-400 font-normal tracking-tight">（悬停出现编辑按钮 ✏️ 可涂鸦，支持拖拽排序）</span>
-    </h3>
-    <input type="file" id="refImages" multiple accept="image/*" class="inputMain mb-3 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-    <textarea id="refUrls" class="inputMain mb-3" rows="2" placeholder="图片URL（换行分隔）"></textarea>
-    
-    <div id="previewArea" class="flex flex-wrap gap-4 mb-6 min-h-[60px] p-2 bg-white/30 rounded-xl border border-dashed border-slate-300"></div>
+    <div class="bg-indigo-50/40 p-5 rounded-2xl border border-indigo-100/60 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
+        <div class="flex flex-wrap justify-between items-center mb-3 gap-2">
+            <label class="text-xs font-bold text-indigo-600 ml-1 tracking-wider uppercase flex items-center gap-2">
+                🖼️ 参考素材设置
+                <span id="refImageCount" class="bg-indigo-500 text-white px-2 py-0.5 rounded-full text-[10px] shadow-sm">0/16</span>
+            </label>
+            <span class="text-[11px] text-slate-500 font-medium">支持拖拽排序 | 悬停点击 ✏️ 可涂鸦蒙版</span>
+        </div>
+        
+        <input type="file" id="refImages" multiple accept="image/*" class="inputMain mb-3 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200 cursor-pointer bg-white/70">
+        <textarea id="refUrls" class="inputMain mb-4 text-sm bg-white/70" rows="2" placeholder="或者直接粘贴图片 URL (支持多行批量粘贴)..."></textarea>
+        
+        <div id="previewArea" class="flex flex-wrap gap-4 min-h-[60px] p-3 bg-white/50 rounded-xl border border-dashed border-slate-300/80 items-center justify-start shadow-inner empty:after:content-['尚未添加任何参考图片'] empty:after:text-slate-400 empty:after:text-sm empty:after:w-full empty:after:text-center"></div>
+    </div>
 
-    <div class="flex gap-4">
-        <button id="generateBtn" onclick="generate()" class="btnMain flex-1 text-lg tracking-wide">✨ 开始生成</button>
-        <button id="cancelBtn" onclick="cancelTask()" class="btnMain hidden text-lg shadow-md hover:scale-[102%]" style="background: linear-gradient(135deg, #ef4444, #f43f5e); width: auto; padding-left: 2rem; padding-right: 2rem;">停止任务</button>
+    <div class="flex gap-4 pt-2">
+        <button id="generateBtn" onclick="generate()" class="btnMain flex-1 text-lg tracking-wide shadow-lg hover:shadow-indigo-500/30">✨ 开始生成</button>
+        <button id="cancelBtn" onclick="cancelTask()" class="btnMain hidden text-lg shadow-md hover:scale-[102%]" style="background: linear-gradient(135deg, #ef4444, #f43f5e); width: auto; padding-left: 2.5rem; padding-right: 2.5rem;">停止任务</button>
     </div>
 </div>
 
@@ -737,7 +774,7 @@ window.renderPreview = function() {
         
         const img = document.createElement("img"); 
         img.src = src; 
-        img.className = "w-20 h-20 object-cover rounded-xl shadow-sm pointer-events-none border border-white/60";
+        img.className = "w-20 h-20 object-cover rounded-xl shadow-sm pointer-events-none border border-slate-300";
         
         const badge = document.createElement("span"); 
         badge.innerText = idx + 1;
@@ -817,7 +854,6 @@ window.recoverTask = async function() {
                 }
             } catch(e) {}
 
-            // 兜底尝试从 API 数据中解析耗时
             if (!costSeconds) {
                 if (d.data.cost) costSeconds = Math.round(d.data.cost);
                 else if (d.data.duration) costSeconds = Math.round(d.data.duration);
@@ -890,10 +926,9 @@ window.generate = async function() {
     toggleTaskUI(false);
 };
 
-/* ===== 加入了精细耗时计算的任务流 ===== */
 async function submitSingleTask(key, uniqueId, displayIdx, p) {
     if (isTaskCancelled) return;
-    const taskStartTime = Date.now(); // 记录当前任务的精准开始时间
+    const taskStartTime = Date.now(); 
     
     try {
         updateLogTaskCard(uniqueId, "正在提交请求...", 5);
@@ -920,7 +955,6 @@ async function submitSingleTask(key, uniqueId, displayIdx, p) {
             updateLogTaskCard(uniqueId, "排队/生成中...", 10, d.data.id);
             updateSkeletonProgress(uniqueId, 10);
             
-            // 将精准开始时间传递给轮询函数
             await pollResult(d.data.id, key, uniqueId, p, taskStartTime);
         } else {
             const errMsg = d ? d.msg : "未知错误";
@@ -936,10 +970,10 @@ async function submitSingleTask(key, uniqueId, displayIdx, p) {
 }
 
 async function pollResult(id, key, uniqueId, p, taskStartTime){
-    taskStartTime = taskStartTime || Date.now(); // 兜底处理
+    taskStartTime = taskStartTime || Date.now(); 
     const iv = Number(document.getElementById("pollInterval").value) * 1000;
     const to = Number(document.getElementById("pollTimeout").value) * 1000;
-    const start = Date.now(); // 仅用于控制超时
+    const start = Date.now(); 
     
     while(!isTaskCancelled){
         if(Date.now() - start > to) {
@@ -963,11 +997,9 @@ async function pollResult(id, key, uniqueId, p, taskStartTime){
             updateSkeletonProgress(uniqueId, prog);
             
             if(d.data.status === "succeeded"){
-                // 计算从提交到现在的总耗时
                 const costSeconds = Math.round((Date.now() - taskStartTime) / 1000);
                 updateLogTaskCard(uniqueId, `生成成功--耗时${costSeconds}秒`, 100, id);
                 
-                // 存入本地记录，以便找回时有据可查
                 try {
                     let meta = JSON.parse(localStorage.getItem('banana_tasks_meta') || '{}');
                     if (meta[id]) {
@@ -999,7 +1031,6 @@ async function pollResult(id, key, uniqueId, p, taskStartTime){
     }
 }
 
-// 接收 badgeText 参数并在图片左上角生成悬浮勋章
 function addResult(url, p, uniqueId, badgeText = ""){
     const record = { url, model: p.model, prompt: p.prompt, ratio: p.ratio, imageSize: p.size };
     historyImages.unshift(record);
@@ -1007,17 +1038,14 @@ function addResult(url, p, uniqueId, badgeText = ""){
     localStorage.setItem('banana_history', JSON.stringify(historyImages));
     renderHistory();
     
-    // 【优化点】在等待下载大图期间，把骨架屏的文字变成“加载大图中...”
     const skelText = document.getElementById(`skel-text-${uniqueId}`);
     if (skelText) {
         skelText.innerText = "加载大图中...";
         skelText.className = "text-[10px] text-indigo-500 mt-1 font-mono font-bold animate-pulse";
     }
 
-    // 【核心修复】引入 Image 预加载机制，告别半截灰图
     const tempImg = new Image();
     
-    // 只有当图片100%下载到浏览器本地内存后，才会触发 onload 并替换DOM
     tempImg.onload = () => {
         const wrap = document.createElement("div");
         wrap.className = "relative group mb-4 break-inside-avoid rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white";
@@ -1025,7 +1053,6 @@ function addResult(url, p, uniqueId, badgeText = ""){
         const img = document.createElement("img");
         img.src = url; 
         img.className = "w-full h-auto cursor-pointer transition-transform duration-700 group-hover:scale-105 animate-fade-in block";
-        // 因为已经在后台加载完了，所以不再需要 loading="lazy"，直接瞬间渲染
         img.decoding = "async"; 
         img.onclick = () => openModal(record);
 
@@ -1041,7 +1068,6 @@ function addResult(url, p, uniqueId, badgeText = ""){
             wrap.append(badge);
         }
 
-        // 精准替换对应的骨架屏
         const skeleton = document.getElementById(`skeleton-${uniqueId}`);
         if(skeleton && skeleton.parentNode) {
             skeleton.parentNode.replaceChild(wrap, skeleton);
@@ -1050,7 +1076,6 @@ function addResult(url, p, uniqueId, badgeText = ""){
         }
     };
 
-    // 兜底防卡死：如果在极少数情况下预加载失败，依然强制渲染出来让浏览器自己处理
     tempImg.onerror = () => {
         const wrap = document.createElement("div");
         wrap.className = "relative group mb-4 break-inside-avoid rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white";
@@ -1065,9 +1090,9 @@ function addResult(url, p, uniqueId, badgeText = ""){
         else document.getElementById("resultArea").appendChild(wrap);
     };
 
-    // 赋值 src，正式触发后台静默下载
     tempImg.src = url;
 }
+
 function getFilteredHistory() {
     const searchInput = document.getElementById("historySearch");
     const keyword = searchInput ? searchInput.value.trim().toLowerCase() : "";
@@ -1362,4 +1387,3 @@ document.addEventListener('keydown', e => {
 </script>
 </body>
 </html>
-

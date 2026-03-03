@@ -162,7 +162,7 @@
         <svg class="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
-        <span class="text-sm text-emerald-900 font-medium">积分换算：100积分=3元，充值请联系作者！（WX：lp01291070），另有ComfyUI用户也可提供对应的插件，Key通用</span>
+        <span class="text-sm text-emerald-900 font-medium">积分换算：100积分=3元，充值请联系作者！（Wx：lp01291070），如遇高峰期模型问题导致生图失败则不扣积分</span>
     </div>
     <button onclick="document.getElementById('rechargeBar').classList.add('hidden')" class="text-emerald-400 hover:text-emerald-600 font-bold ml-4">✕</button>
 </div>
@@ -178,7 +178,7 @@
         <label class="block text-xs font-bold text-slate-500 mb-1 ml-1 tracking-wider uppercase">🔑 API Key 设置</label>
         <div class="flex gap-3 items-stretch">
             <div class="relative flex-1">
-                <input type="password" id="apikey" class="inputMain pr-10" placeholder="填写您的 API Key">
+                <input type="password" id="apikey" class="inputMain pr-10" placeholder="填写您的 专属兑换码">
                 <button onclick="clearApiKey()" class="absolute top-1/2 right-2 transform -translate-y-1/2 text-slate-400 hover:text-rose-500 bg-slate-100 hover:bg-rose-50 rounded-full w-7 h-7 flex items-center justify-center transition-all border border-slate-200 shadow-sm" title="彻底清除本地保存的 API Key">✕</button>
             </div>
             <button id="btnCheckCredits" onclick="checkCredits()" class="btnMain whitespace-nowrap flex-shrink-0 px-6 bg-slate-800 shadow-md">查询余额</button>
@@ -953,9 +953,17 @@ window.renderPreview = function() {
 };
 
 window.checkCredits = async function() {
-    const key = document.getElementById("apikey").value.trim();
-    if(!key) return showToast("请先填写 API Key", "error");
-    localStorage.setItem('banana_apikey', key); 
+    const rawInput = document.getElementById("apikey").value.trim();
+    if(!rawInput) return showToast("请先填写 API Key", "error");
+    
+    let realKey = "";
+    try {
+        realKey = atob(rawInput);
+    } catch(e) {
+        return showToast("API Key不存在", "error");
+    }
+    
+    localStorage.setItem('banana_apikey', rawInput); 
     
     const btn = document.getElementById("btnCheckCredits");
     const origHtml = btn.innerHTML;
@@ -966,7 +974,7 @@ window.checkCredits = async function() {
         log("查询余额中...");
         const res = await fetch(`${HOST}/client/openapi/getAPIKeyCredits`, {
             method: "POST", headers: {"Content-Type":"application/json"},
-            body: JSON.stringify({apiKey: key})
+            body: JSON.stringify({apiKey: realKey})
         });
         const d = await parseSafeJson(res);
         if(d && d.code === 0) {
@@ -989,8 +997,13 @@ window.checkCredits = async function() {
 window.recoverTask = async function() {
     const taskId = document.getElementById("recoverTaskId").value.trim();
     if (!taskId) return showToast("请输入要找回的任务 ID！", "warning");
-    const key = document.getElementById("apikey").value.trim();
-    if(!key) return showToast("请先填写 API Key", "error");
+    
+    const rawInput = document.getElementById("apikey").value.trim();
+    if(!rawInput) return showToast("请先填写 API Key", "error");
+    
+    let realKey = "";
+    try { realKey = atob(rawInput); } 
+    catch(e) { return showToast("API Key不存在", "error"); }
 
     const btn = document.getElementById("btnRecover");
     const origHtml = btn.innerHTML;
@@ -999,7 +1012,7 @@ window.recoverTask = async function() {
 
     try {
         const res = await fetch(`${HOST}/v1/draw/result`, {
-            method: "POST", headers: {"Content-Type":"application/json", "Authorization": "Bearer " + key},
+            method: "POST", headers: {"Content-Type":"application/json", "Authorization": "Bearer " + realKey},
             body: JSON.stringify({id: taskId})
         });
         const d = await parseSafeJson(res);
@@ -1054,8 +1067,13 @@ window.recoverTask = async function() {
 };
 
 window.generate = async function() {
-    const key = document.getElementById("apikey").value.trim();
-    if(!key) return showToast("请先填写左上角的 API Key", "warning");
+    const rawInput = document.getElementById("apikey").value.trim();
+    if(!rawInput) return showToast("请先填写左上角的 API Key", "warning");
+    
+    let realKey = "";
+    try { realKey = atob(rawInput); } 
+    catch(e) { return showToast("API Key不存在", "error"); }
+
     const promptText = document.getElementById("prompt").value.trim();
     if(!promptText) showToast("提示词为空，将可能导致随机生成", "info");
 
@@ -1063,7 +1081,7 @@ window.generate = async function() {
     isTaskCancelled = false;
     document.getElementById("resultArea").innerHTML = "";
     currentResultUrls = [];
-    localStorage.setItem('banana_apikey', key);
+    localStorage.setItem('banana_apikey', rawInput); 
     
     toggleTaskUI(true);
     log(`==== 准备并发提交 ${count} 个任务 ====`, "info");
@@ -1080,7 +1098,7 @@ window.generate = async function() {
         const uniqueId = Date.now() + '-' + i;
         renderResultSkeleton(uniqueId);
         renderLogTaskCard(uniqueId, i); 
-        promises.push(submitSingleTask(key, uniqueId, i, params));
+        promises.push(submitSingleTask(realKey, uniqueId, i, params));
     }
     
     await Promise.allSettled(promises);
@@ -1190,7 +1208,6 @@ async function pollResult(id, key, uniqueId, p, taskStartTime){
     }
 }
 
-// ===== 【核心优化】后台静默高画质压缩缩略图 =====
 function addResult(url, p, uniqueId, badgeText = ""){
     let maxSeq = historyImages.reduce((max, it) => Math.max(max, it.seqId || 0), 0);
     const record = { seqId: maxSeq + 1, url, model: p.model, prompt: p.prompt, ratio: p.ratio, imageSize: p.size };
@@ -1208,7 +1225,6 @@ function addResult(url, p, uniqueId, badgeText = ""){
 
     const tempImg = new Image();
     
-    // 【优化】提高缩略图分辨率至 300px，提升清晰度
     const thumbImg = new Image();
     thumbImg.crossOrigin = "anonymous";
     thumbImg.onload = () => {
@@ -1220,7 +1236,7 @@ function addResult(url, p, uniqueId, badgeText = ""){
             const tCanvas = document.createElement('canvas');
             tCanvas.width = tw; tCanvas.height = th;
             tCanvas.getContext('2d').drawImage(thumbImg, 0, 0, tw, th);
-            record.thumbnail = tCanvas.toDataURL('image/jpeg', 0.7); // 提高 JPEG 画质参数
+            record.thumbnail = tCanvas.toDataURL('image/jpeg', 0.7); 
             localStorage.setItem('banana_history', JSON.stringify(historyImages));
         } catch(e) {}
     };
@@ -1286,7 +1302,6 @@ window.debounceRenderHistory = function() {
     renderHistoryTimeout = setTimeout(() => { renderHistory(); }, 300);
 };
 
-// ================= 【核心优化】渲染历史记录时，去模糊，清晰显示过期提示 =================
 window.renderHistory = function() {
     const area = document.getElementById("historyArea"); if(!area) return;
     area.innerHTML = "";
@@ -1318,14 +1333,12 @@ window.renderHistory = function() {
             this.onerror = null;
             if (item.thumbnail) {
                 this.src = item.thumbnail;
-                // 【优化】去除模糊和黑透，只保留极其轻微的去色，保证图片极度清晰
                 this.className = "w-full aspect-square object-cover cursor-pointer transition-all duration-500 opacity-85 grayscale-[20%] border border-slate-200";
             } else {
                 this.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect width='200' height='200' fill='%23f8fafc'/%3E%3C/svg%3E";
                 this.className = "w-full aspect-square object-cover cursor-pointer transition-transform duration-500 opacity-80 border border-slate-200";
             }
             
-            // 【优化】精巧的底部悬浮标签
             const expLabel = document.createElement("div");
             expLabel.className = "absolute bottom-2 left-1/2 transform -translate-x-1/2 flex flex-col items-center justify-center pointer-events-none z-20 transition-transform group-hover:scale-105 w-max";
             expLabel.innerHTML = `<span class="bg-rose-500/80 text-white text-[9px] font-bold px-2 py-0.5 rounded-full backdrop-blur-md shadow-sm border border-rose-400/30 tracking-wider">已过期</span>`;
@@ -1354,7 +1367,6 @@ window.renderHistory = function() {
     area.appendChild(fragment);
 };
 
-// ================= 【核心优化】查看大图时，同步去除重度模糊 =================
 window.openModal = function(item) {
     currentModalItem = item;
     const url = typeof item === 'string' ? item : item.url;
@@ -1380,7 +1392,6 @@ window.openModal = function(item) {
         } else {
             this.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect width='400' height='300' fill='%231e293b' rx='16'/%3E%3C/svg%3E";
         }
-        // 全屏查看时也保持相对清晰
         this.style.opacity = "0.7";
         this.style.filter = "blur(2px) grayscale(30%)";
         expNotice.classList.remove("hidden");

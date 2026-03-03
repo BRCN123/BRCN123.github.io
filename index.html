@@ -3,8 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <title>PH Nano Banana AI Studio - Pro Glass</title>
+<link rel="icon" href="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@latest/assets/Banana/3D/banana_3d.png">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
 <style>
     /* ================= 苹果风毛玻璃核心 CSS ================= */
     :root {
@@ -35,17 +38,17 @@
         box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.4);
     }
 
-    /* ================= 【核心优化】拟态输入框视觉升级 ================= */
+    /* 拟态输入框视觉升级 */
     .inputMain {
-        background: rgba(255, 255, 255, 0.85); /* 提高不透明度，脱离背景 */
-        border: 1px solid rgba(203, 213, 225, 0.8); /* 增加清晰的边框界线 */
+        background: rgba(255, 255, 255, 0.85); 
+        border: 1px solid rgba(203, 213, 225, 0.8); 
         padding: 12px 16px;
         border-radius: 12px;
         width: 100%;
         outline: none;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         color: #334155;
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 1px 2px rgba(0,0,0,0.02); /* 强化立体感 */
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 1px 2px rgba(0,0,0,0.02); 
     }
     .inputMain:hover {
         background: rgba(255, 255, 255, 1);
@@ -57,7 +60,7 @@
         box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.2), inset 0 1px 2px rgba(0,0,0,0.01);
     }
 
-    /* 【核心优化】让下拉框自带明确的箭头指示 */
+    /* 下拉框自带明确的箭头指示 */
     select.inputMain {
         background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
         background-position: right 0.75rem center;
@@ -128,6 +131,16 @@
 
 <body class="bg-slate-50 min-h-screen p-6 relative overflow-x-hidden text-slate-800">
 
+<div id="toastContainer" class="fixed top-6 left-1/2 transform -translate-x-1/2 z-[9999] flex flex-col gap-3 items-center pointer-events-none w-full max-w-md"></div>
+
+<div id="dragOverlay" class="fixed inset-0 bg-indigo-900/60 backdrop-blur-md z-[9998] hidden flex items-center justify-center border-[8px] border-indigo-400 border-dashed rounded-2xl m-4 transition-all pointer-events-none">
+    <div class="bg-white/90 p-10 rounded-3xl shadow-2xl flex flex-col items-center">
+        <span class="text-7xl mb-6 animate-bounce">📥</span>
+        <h2 class="text-3xl font-extrabold text-indigo-600 tracking-wide">松开鼠标，自动提取为参考图</h2>
+        <p class="text-slate-500 mt-2 font-medium">支持批量拖入多张图片</p>
+    </div>
+</div>
+
 <div class="fixed top-[-10%] left-[-10%] w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-[100px] opacity-60 animate-blob pointer-events-none z-0"></div>
 <div class="fixed top-[20%] right-[-5%] w-96 h-96 bg-blue-300 rounded-full mix-blend-multiply filter blur-[100px] opacity-60 animate-blob animation-delay-2000 pointer-events-none z-0"></div>
 <div class="fixed bottom-[-10%] left-[20%] w-[500px] h-[500px] bg-pink-300 rounded-full mix-blend-multiply filter blur-[120px] opacity-60 animate-blob animation-delay-4000 pointer-events-none z-0"></div>
@@ -156,7 +169,7 @@
 
 <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-<div class="lg:col-span-2 space-y-6">
+<div class="lg:col-span-2 space-y-3">
 
 <div class="glass-card p-7 rounded-3xl flex flex-col gap-3">
     <h2 class="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 border-b border-indigo-100 pb-4">PH Nano Banana AI Studio</h2>
@@ -168,7 +181,7 @@
                 <input type="password" id="apikey" class="inputMain pr-10" placeholder="填写您的 API Key">
                 <button onclick="clearApiKey()" class="absolute top-1/2 right-2 transform -translate-y-1/2 text-slate-400 hover:text-rose-500 bg-slate-100 hover:bg-rose-50 rounded-full w-7 h-7 flex items-center justify-center transition-all border border-slate-200 shadow-sm" title="彻底清除本地保存的 API Key">✕</button>
             </div>
-            <button onclick="checkCredits()" class="btnMain whitespace-nowrap flex-shrink-0 px-6 bg-slate-800 shadow-md">查询余额</button>
+            <button id="btnCheckCredits" onclick="checkCredits()" class="btnMain whitespace-nowrap flex-shrink-0 px-6 bg-slate-800 shadow-md">查询余额</button>
         </div>
     </div>
 
@@ -194,6 +207,10 @@
                     <option value="9:16">9:16</option>
                     <option value="4:3">4:3</option>
                     <option value="3:4">3:4</option>
+                    <option value="3:2">3:2</option>
+                    <option value="2:3">2:3</option>
+                    <option value="5:4">5:4</option>
+                    <option value="4:5">4:5</option>
                     <option value="21:9">21:9</option>
                     <option value="4:1">4:1 - banana-2专属</option>
                     <option value="1:4">1:4 - banana-2专属</option>
@@ -227,24 +244,25 @@
     <div>
         <label class="block text-xs font-bold text-slate-500 mb-1 ml-1 tracking-wider uppercase">📝 提示词 (Prompt)</label>
         <div class="relative">
-            <textarea id="prompt" class="inputMain pr-10 leading-relaxed resize-y shadow-sm" rows="4" placeholder="在此输入您的创作提示词，描述画面的细节要素..."></textarea>
-            <button onclick="if(confirm('确定要清空提示词吗？')) document.getElementById('prompt').value=''" class="absolute top-3 right-3 text-slate-400 hover:text-rose-500 bg-slate-100 hover:bg-rose-50 rounded-full w-7 h-7 flex items-center justify-center transition-all shadow-sm border border-slate-200" title="清空提示词">✕</button>
+            <textarea id="prompt" class="inputMain pr-[80px] leading-relaxed resize-y shadow-sm" rows="4" placeholder="在此输入您的创作提示词，描述画面的细节要素..."></textarea>
+            <button onclick="copyPrompt()" class="absolute top-3 right-12 text-slate-400 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 rounded-full w-7 h-7 flex items-center justify-center transition-all shadow-sm border border-slate-200" title="复制提示词">📋</button>
+            <button onclick="clearPrompt()" class="absolute top-3 right-3 text-slate-400 hover:text-rose-500 bg-slate-100 hover:bg-rose-50 rounded-full w-7 h-7 flex items-center justify-center transition-all shadow-sm border border-slate-200" title="清空提示词">✕</button>
         </div>
     </div>
 
-    <div class="bg-indigo-50/40 p-3 rounded-2xl border border-indigo-100/60 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
+    <div class="bg-indigo-50/40 p-3 rounded-2xl border border-indigo-100/60 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] relative">
         <div class="flex flex-wrap justify-between items-center mb-3 gap-2">
             <label class="text-xs font-bold text-indigo-600 ml-1 tracking-wider uppercase flex items-center gap-2">
                 🖼️ 参考素材设置
                 <span id="refImageCount" class="bg-indigo-500 text-white px-2 py-0.5 rounded-full text-[10px] shadow-sm">0/16</span>
             </label>
-            <span class="text-[11px] text-slate-500 font-medium">支持拖拽排序 | 悬停点击 ✏️ 可涂鸦蒙版</span>
+            <span class="text-[11px] text-slate-500 font-medium">支持全局拖入图片 | 悬停点击 ✏️ 可涂鸦蒙版</span>
         </div>
         
         <input type="file" id="refImages" multiple accept="image/*" class="inputMain mb-3 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200 cursor-pointer bg-white/70">
         <textarea id="refUrls" class="inputMain mb-4 text-sm bg-white/70" rows="2" placeholder="或者直接粘贴图片 URL (支持多行批量粘贴)..."></textarea>
         
-        <div id="previewArea" class="flex flex-wrap gap-4 min-h-[60px] p-3 bg-white/50 rounded-xl border border-dashed border-slate-300/80 items-center justify-start shadow-inner empty:after:content-['尚未添加任何参考图片'] empty:after:text-slate-400 empty:after:text-sm empty:after:w-full empty:after:text-center"></div>
+        <div id="previewArea" class="flex flex-wrap gap-4 min-h-[60px] p-3 bg-white/50 rounded-xl border border-dashed border-slate-300/80 items-center justify-start shadow-inner empty:after:content-['尚未添加任何参考图片'] empty:after:text-slate-400 empty:after:text-sm empty:after:w-full empty:after:text-center transition-all duration-300"></div>
     </div>
 
     <div class="flex gap-4 pt-2">
@@ -253,10 +271,9 @@
     </div>
 </div>
 
-<div class="glass-card p-6 rounded-3xl">
-    <div class="flex justify-between items-center mb-4 gap-4">
-        
-        <div class="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-hide w-full">
+<div class="glass-card p-6 rounded-3xl flex flex-col gap-4">
+    <div class="flex flex-wrap justify-between items-center gap-4">
+        <div class="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-hide w-full xl:w-auto">
             <h3 class="font-bold text-slate-700 text-lg whitespace-nowrap shrink-0">当前生成结果</h3>
             
             <div class="flex items-center gap-2 text-sm text-slate-600 font-medium bg-white/50 backdrop-blur px-3 py-1.5 rounded-full border border-slate-200 shadow-sm whitespace-nowrap shrink-0">
@@ -271,19 +288,19 @@
             
             <div class="flex items-center bg-white/50 backdrop-blur rounded-full border border-slate-200 overflow-hidden shadow-sm shrink-0 w-[200px]">
                 <input type="text" id="recoverTaskId" placeholder="输入ID找回任务..." class="bg-transparent border-none text-[11px] px-3 py-1.5 w-full outline-none text-slate-600 placeholder-slate-400">
-                <button onclick="recoverTask()" class="bg-indigo-500 hover:bg-indigo-600 text-white text-[11px] px-3 py-1.5 font-bold transition-colors whitespace-nowrap border-l border-indigo-600">找回</button>
+                <button id="btnRecover" onclick="recoverTask()" class="bg-indigo-500 hover:bg-indigo-600 text-white text-[11px] px-3 py-1.5 font-bold transition-colors whitespace-nowrap border-l border-indigo-600 flex items-center justify-center min-w-[50px]">找回</button>
             </div>
         </div>
 
-        <button id="downloadAllBtn" onclick="downloadAllResults()" class="text-sm bg-indigo-50/80 border border-indigo-200 text-indigo-600 px-4 py-1.5 rounded-full hover:bg-indigo-100 hover:shadow shadow-sm hidden transition-all font-medium whitespace-nowrap shrink-0">一键下载</button>
+        <button id="downloadAllBtn" onclick="downloadAllResults()" class="text-sm bg-indigo-50/80 border border-indigo-200 text-indigo-600 px-4 py-1.5 rounded-full hover:bg-indigo-100 hover:shadow shadow-sm hidden transition-all font-medium whitespace-nowrap shrink-0 flex items-center justify-center min-w-[100px]">📦 打包下载</button>
     </div>
     
-    <div id="resultArea" class="columns-2 gap-4 min-h-[150px]"></div>
+    <div id="resultArea" class="grid grid-cols-2 gap-4 min-h-[150px] items-start content-start"></div>
 </div>
 
 </div>
 
-<div class="flex flex-col gap-6">
+<div class="flex flex-col gap-3">
 
 <div class="bg-black text-white p-5 rounded-xl shadow h-[450px] flex flex-col relative overflow-hidden">
     <div class="absolute top-[-50px] right-[-50px] w-32 h-32 bg-indigo-500 rounded-full mix-blend-screen filter blur-[60px] opacity-30 pointer-events-none"></div>
@@ -303,100 +320,238 @@
         <div class="flex justify-between items-center">
             <h3 class="font-semibold leading-tight">
                 <span class="text-base block">历史记录（图片时效2h）</span>
-                <span class="text-[14px] text-gray-400 font-normal tracking-tighter">请及时下载(过期复用仍可用)</span>
+                <span class="text-[14px] text-slate-400 font-normal tracking-tighter">请及时下载(过期复用仍可用)</span>
             </h3>
             <div class="flex gap-2 items-center flex-shrink-0">
-                <button onclick="exportHistory()" class="text-xs text-blue-500 hover:text-blue-700">导出</button>
-                <button onclick="document.getElementById('importFile').click()" class="text-xs text-green-500 hover:text-green-700">导入</button>
+                <button onclick="exportHistory()" class="text-xs text-blue-500 hover:text-blue-700 font-medium">导出</button>
+                <button onclick="document.getElementById('importFile').click()" class="text-xs text-emerald-600 hover:text-emerald-800 font-medium">导入</button>
                 <input type="file" id="importFile" class="hidden" accept=".json" onchange="importHistory(event)">
-                <span class="text-gray-300">|</span>
-                <button onclick="clearHistory()" class="text-xs text-red-500 hover:text-red-700">清空</button>
+                <span class="text-slate-300">|</span>
+                <button onclick="clearHistory()" class="text-xs text-rose-500 hover:text-rose-700 font-medium">清空</button>
             </div>
         </div>
         <div class="relative w-full">
-            <input type="text" id="historySearch" oninput="renderHistory()" placeholder="🔍 输入提示词关键信息搜索历史..." class="inputMain text-xs py-1.5 px-3 w-full bg-gray-50 border-gray-200 focus:bg-white pr-8">
-            <button onclick="document.getElementById('historySearch').value=''; renderHistory();" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-700 text-sm font-bold">✕</button>
+            <input type="text" id="historySearch" oninput="debounceRenderHistory()" placeholder="🔍 输入提示词关键信息搜索历史..." class="inputMain text-xs py-2 px-4 w-full bg-white/60 border-slate-200 focus:bg-white pr-8">
+            <button onclick="document.getElementById('historySearch').value=''; debounceRenderHistory();" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-700 text-sm font-bold">✕</button>
         </div>
     </div>
-    <div id="historyArea" class="columns-2 lg:columns-3 gap-3 overflow-y-auto flex-1 content-start pr-1 pb-4"></div>
+    <div id="historyArea" class="grid grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto flex-1 content-start items-start pr-1 pb-4 scrollbar-hide"></div>
 </div>
 
 </div>
 </div>
 
-<div id="imageModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity">
-    <button onclick="closeModal()" class="absolute top-5 right-8 text-white/80 hover:text-white text-4xl z-50 drop-shadow-md">✕</button>
-    <button id="prevArrow" onclick="prevModalImage()" class="absolute left-6 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white bg-black/30 hover:bg-black/50 rounded-full w-14 h-14 flex items-center justify-center text-3xl z-50 transition-all hidden">&#10094;</button>
+<div id="imageModal" class="hidden fixed inset-0 bg-slate-900/85 backdrop-blur-xl flex items-center justify-center z-[100] transition-opacity">
+    <button onclick="closeModal()" class="absolute top-5 right-8 text-white/80 hover:text-white text-4xl z-50 drop-shadow-md transition-all hover:scale-110">✕</button>
+    <button id="prevArrow" onclick="prevModalImage()" class="absolute left-6 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white bg-black/30 hover:bg-black/50 rounded-full w-14 h-14 flex items-center justify-center text-3xl z-50 transition-all hidden backdrop-blur border border-white/10">&#10094;</button>
     
-    <img id="modalImg" alt="图片加载中或已过期" class="max-w-[90%] max-h-[85%] rounded-xl shadow-2xl object-contain text-white text-center">
+    <img id="modalImg" alt="图片加载中或已过期" class="max-w-[90%] max-h-[85%] rounded-2xl shadow-2xl object-contain text-white text-center border border-white/10 relative z-10">
     
-    <button id="nextArrow" onclick="nextModalImage()" class="absolute right-6 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white bg-black/30 hover:bg-black/50 rounded-full w-14 h-14 flex items-center justify-center text-3xl z-50 transition-all hidden">&#10095;</button>
+    <div id="modalExpiredNotice" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex-col items-center pointer-events-none hidden z-50">
+        <span class="bg-rose-500/90 text-white text-xl font-bold px-6 py-2 rounded-full backdrop-blur-md shadow-lg flex items-center justify-center">图片已失效</span>
+        <span class="text-sm text-white/90 font-medium bg-black/60 px-4 py-1.5 rounded-full backdrop-blur-sm shadow flex items-center justify-center mt-3">仍可点击下方【✨ 复用参数】重新生成</span>
+    </div>
+
+    <button id="nextArrow" onclick="nextModalImage()" class="absolute right-6 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white bg-black/30 hover:bg-black/50 rounded-full w-14 h-14 flex items-center justify-center text-3xl z-50 transition-all hidden backdrop-blur border border-white/10">&#10095;</button>
     
     <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-3 z-50 bg-black/40 p-2.5 rounded-2xl backdrop-blur-md border border-white/10 shadow-2xl w-max">
-        <button id="reuseBtn" onclick="reuseModalParams()" class="bg-emerald-500/90 hover:bg-emerald-500 text-white px-4 md:px-5 py-2.5 rounded-xl shadow font-medium transition-all hidden border border-emerald-400/50 hover:scale-105 text-sm">✨ 复用参数</button>
-        <button onclick="uploadToRefFromModal()" class="bg-amber-500/90 hover:bg-amber-500 text-white px-4 md:px-5 py-2.5 rounded-xl shadow font-medium transition-all border border-amber-400/50 hover:scale-105 text-sm">🖼️ 设为参考图</button>
-        <button onclick="downloadModalImage()" class="bg-indigo-500/90 hover:bg-indigo-500 text-white px-4 md:px-5 py-2.5 rounded-xl shadow font-medium transition-all border border-indigo-400/50 hover:scale-105 text-sm">⬇️ 下载原图</button>
+        <button id="reuseBtn" onclick="reuseModalParams()" class="bg-emerald-500/90 hover:bg-emerald-500 text-white px-4 md:px-5 py-2.5 rounded-xl shadow font-medium transition-all hidden border border-emerald-400/50 hover:-translate-y-1 text-sm">✨ 复用参数</button>
+        <button onclick="uploadToRefFromModal()" class="bg-amber-500/90 hover:bg-amber-500 text-white px-4 md:px-5 py-2.5 rounded-xl shadow font-medium transition-all border border-amber-400/50 hover:-translate-y-1 text-sm">🖼️ 设为参考图</button>
+        <button onclick="downloadModalImage()" class="bg-indigo-500/90 hover:bg-indigo-500 text-white px-4 md:px-5 py-2.5 rounded-xl shadow font-medium transition-all border border-indigo-400/50 hover:-translate-y-1 text-sm">⬇️ 下载原图</button>
     </div>
 </div>
 
-<div id="editorModalWrapper" class="hidden fixed inset-0 bg-slate-900/85 backdrop-blur-xl flex flex-col items-center justify-center z-[60] transition-opacity">
-    <div class="bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-3xl w-[95%] max-w-4xl flex flex-col gap-5 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+<div id="editorModalWrapper" class="hidden fixed inset-0 bg-slate-900/85 backdrop-blur-xl flex flex-col items-center justify-center z-[110] transition-opacity p-4">
+    <div class="bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-3xl w-full max-w-4xl flex flex-col gap-4 shadow-[0_0_50px_rgba(0,0,0,0.5)] max-h-full">
         
-        <div class="flex justify-between items-center text-white">
-            <h3 class="font-bold text-xl flex items-center gap-2">🖌️ 参考素材涂鸦编辑器</h3>
-            <button onclick="closeEditor()" class="hover:text-rose-400 text-2xl font-bold transition-colors">✕</button>
+        <div class="flex justify-between items-center text-white shrink-0">
+            <h3 class="font-bold text-xl flex items-center gap-2">🖌️ 参考图涂鸦掩盖 (Inpainting)</h3>
+            <button onclick="closeEditor()" class="hover:text-rose-400 text-2xl font-bold transition-colors w-8 h-8 flex items-center justify-center">✕</button>
         </div>
         
-        <div class="flex flex-wrap gap-3 items-center bg-black/40 p-3.5 rounded-2xl border border-white/10 text-sm text-white">
+        <div class="flex flex-wrap gap-3 items-center bg-black/40 p-3.5 rounded-2xl border border-white/10 text-sm text-white shrink-0">
             <button id="btnBrush" onclick="setEditorTool('brush')" class="bg-indigo-500 hover:bg-indigo-600 px-4 py-2 rounded-xl ring-2 ring-indigo-300 font-medium transition-all shadow">🖌️ 画笔</button>
             <button id="btnEraser" onclick="setEditorTool('eraser')" class="bg-slate-600 hover:bg-slate-700 px-4 py-2 rounded-xl font-medium transition-all shadow">🧽 橡皮擦</button>
             <div class="w-px h-6 bg-white/20 mx-1"></div>
             
             <label class="flex items-center gap-2 font-medium cursor-pointer">
-                颜色: <input type="color" id="brushColor" value="#ffffff" class="w-8 h-8 rounded cursor-pointer bg-transparent border-0">
+                <input type="color" id="brushColor" value="#ffffff" class="w-7 h-7 rounded cursor-pointer bg-transparent border-0" title="画笔颜色">
             </label>
             <label class="flex items-center gap-2 font-medium cursor-pointer mr-2">
-                粗细: <input type="range" id="brushSize" min="1" max="100" value="20" class="w-20 cursor-pointer accent-indigo-500">
+                <span class="text-slate-300 text-xs hidden sm:inline">粗细:</span>
+                <input type="range" id="brushSize" min="1" max="100" value="20" class="w-20 cursor-pointer accent-indigo-500">
             </label>
             
             <div class="w-px h-6 bg-white/20 mx-1 hidden sm:block"></div>
             
-            <button id="btnUndo" onclick="undoEditor()" disabled class="bg-slate-600 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-2 rounded-xl font-medium transition-all shadow" title="返回上一步">↩️ 撤销</button>
-            <button id="btnRedo" onclick="redoEditor()" disabled class="bg-slate-600 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-2 rounded-xl font-medium transition-all shadow" title="返回下一步">↪️ 重做</button>
+            <div class="flex gap-2 ml-auto sm:ml-0">
+                <button id="btnUndo" onclick="undoEditor()" disabled class="bg-slate-600 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-2 rounded-xl font-medium transition-all shadow flex items-center gap-1" title="返回上一步"><span class="text-lg leading-none">↩️</span><span class="hidden md:inline">撤销</span></button>
+                <button id="btnRedo" onclick="redoEditor()" disabled class="bg-slate-600 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-2 rounded-xl font-medium transition-all shadow flex items-center gap-1" title="返回下一步"><span class="text-lg leading-none">↪️</span><span class="hidden md:inline">重做</span></button>
+            </div>
 
-            <button onclick="clearEditorCanvas()" class="bg-rose-500/80 hover:bg-rose-600 px-4 py-2 rounded-xl font-medium transition-all sm:ml-auto shadow">🗑️ 擦除重置</button>
+            <button onclick="clearEditorCanvas()" class="bg-rose-500/80 hover:bg-rose-600 px-4 py-2 rounded-xl font-medium transition-all sm:ml-auto shadow whitespace-nowrap">🗑️ 擦除重置</button>
         </div>
         
-        <div class="relative w-full rounded-2xl bg-black/60 border border-white/10 flex justify-center items-center p-3 overflow-hidden shadow-inner" style="height: 60vh;">
+        <div class="relative w-full rounded-2xl bg-black/60 border border-white/10 flex justify-center items-center p-2 overflow-hidden shadow-inner flex-1 min-h-[40vh]">
             <div class="relative max-w-full max-h-full inline-block" id="canvasContainer">
                 <canvas id="bgCanvas" class="block max-w-full max-h-[55vh] w-auto h-auto rounded pointer-events-none shadow-md object-contain"></canvas>
                 <canvas id="editorCanvas" class="absolute top-0 left-0 max-w-full max-h-[55vh] w-full h-full cursor-crosshair touch-none rounded"></canvas>
             </div>
         </div>
         
-        <div class="flex justify-end gap-4 mt-1">
-            <button onclick="closeEditor()" class="px-6 py-2.5 rounded-xl bg-slate-600/80 hover:bg-slate-600 border border-white/10 text-white font-medium transition-all">取消修改</button>
+        <div class="flex justify-end gap-3 mt-1 shrink-0">
+            <button onclick="closeEditor()" class="px-6 py-2.5 rounded-xl bg-slate-600/80 hover:bg-slate-600 border border-white/10 text-white font-medium transition-all">取消</button>
             <button onclick="saveEditor()" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 shadow-lg text-white font-bold transition-all hover:scale-105">✅ 保存涂鸦</button>
         </div>
     </div>
 </div>
 
 <script>
+// ==================== 核心配置 ====================
 const HOST = atob("aHR0cHM6Ly9ncnNhaS5kYWtrYS5jb20uY24=");
-const MAX_IMAGES=16, MAX_IMG_WIDTH=2048, MAX_HISTORY=500;
-let uploadedImagesBase64=[], uploadedImageUrls=[], historyImages = JSON.parse(localStorage.getItem('banana_history')) || [];
+const MAX_IMAGES = 16, MAX_IMG_WIDTH = 2048, MAX_HISTORY = 500;
+let uploadedImagesBase64 = [], uploadedImageUrls = [];
+let historyImages = JSON.parse(localStorage.getItem('banana_history')) || [];
+
+// ===== 历史数据平滑升级：分配永久固定序号 =====
+let needsMigration = false;
+historyImages = historyImages.map((item, idx, arr) => {
+    if (typeof item === 'string') {
+        needsMigration = true;
+        return { url: item, seqId: arr.length - idx };
+    }
+    if (!item.seqId) {
+        needsMigration = true;
+        item.seqId = arr.length - idx;
+    }
+    return item;
+});
+if (needsMigration) {
+    localStorage.setItem('banana_history', JSON.stringify(historyImages));
+}
+
 let currentResultUrls = [], isTaskCancelled = false, currentModalItem = null, currentModalIndex = -1;
 
-/* ===== 文件系统自动保存 API 逻辑 ===== */
+/* ===== 悬浮 Toast 提示系统 ===== */
+window.showToast = function(msg, type = "info") {
+    const container = document.getElementById("toastContainer");
+    const toast = document.createElement("div");
+    
+    const baseClasses = "flex items-center justify-center gap-3 px-6 py-3 rounded-full border backdrop-blur-xl transition-all duration-400 ease-out transform -translate-y-10 opacity-0 scale-95 pointer-events-auto z-[9999]";
+    
+    const typeStyles = {
+        success: "bg-emerald-50/90 text-emerald-800 border-emerald-200/60 shadow-[0_10px_40px_-10px_rgba(16,185,129,0.4)]",
+        error: "bg-rose-50/90 text-rose-800 border-rose-200/60 shadow-[0_10px_40px_-10px_rgba(244,63,94,0.4)]",
+        warning: "bg-amber-50/90 text-amber-800 border-amber-200/60 shadow-[0_10px_40px_-10px_rgba(245,158,11,0.4)]",
+        info: "bg-indigo-50/90 text-indigo-800 border-indigo-200/60 shadow-[0_10px_40px_-10px_rgba(99,102,241,0.4)]"
+    };
+    const icons = { success: "✨", error: "❌", warning: "⚠️", info: "ℹ️" };
+    
+    toast.className = `${baseClasses} ${typeStyles[type] || typeStyles.info}`;
+    toast.innerHTML = `<span class="text-lg drop-shadow-sm">${icons[type] || icons.info}</span><span class="text-sm font-bold tracking-wide">${msg}</span>`;
+    container.appendChild(toast);
+    
+    void toast.offsetWidth; 
+    toast.classList.remove("-translate-y-10", "opacity-0", "scale-95");
+    toast.classList.add("translate-y-0", "opacity-100", "scale-100");
+    
+    setTimeout(() => {
+        toast.classList.remove("translate-y-0", "opacity-100", "scale-100");
+        toast.classList.add("-translate-y-10", "opacity-0", "scale-95");
+        setTimeout(() => toast.remove(), 400); 
+    }, 3000);
+};
+
+window.clearPrompt = function() {
+    if(confirm('确定要清空当前提示词吗？')) {
+        document.getElementById('prompt').value = '';
+        showToast("已清空提示词", "success");
+    }
+};
+
+window.copyPrompt = function() {
+    const text = document.getElementById('prompt').value;
+    if(!text) return showToast("提示词输入框为空，无法复制", "warning");
+    navigator.clipboard.writeText(text).then(() => {
+        showToast("✅ 已成功复制提示词", "success");
+    }).catch(err => {
+        showToast("复制失败，请手动选取复制", "error");
+    });
+};
+
+/* ===== 全局拖拽上传系统 ===== */
+let dragCounter = 0;
+document.addEventListener('dragenter', (e) => {
+    e.preventDefault();
+    if (e.dataTransfer.types.includes('Files')) {
+        dragCounter++;
+        document.getElementById('dragOverlay').classList.remove('hidden');
+    }
+});
+document.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    if (e.dataTransfer.types.includes('Files')) {
+        dragCounter--;
+        if (dragCounter === 0) document.getElementById('dragOverlay').classList.add('hidden');
+    }
+});
+document.addEventListener('dragover', (e) => e.preventDefault());
+document.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dragCounter = 0;
+    document.getElementById('dragOverlay').classList.add('hidden');
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        processFiles(Array.from(e.dataTransfer.files));
+    }
+});
+
+function processFiles(files) {
+    const imageFiles = files.filter(f => f.type.startsWith('image/'));
+    if(imageFiles.length === 0) return showToast("拖入的文件中没有支持的图片格式", "warning");
+    if (uploadedImagesBase64.length + uploadedImageUrls.length + imageFiles.length > MAX_IMAGES) {
+        return showToast(`最多只能添加 ${MAX_IMAGES} 张参考素材！`, "warning");
+    }
+    
+    let processedCount = 0;
+    imageFiles.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const img = new Image();
+            img.onload = () => {
+                let w = img.width, h = img.height;
+                if (w > MAX_IMG_WIDTH) { h = Math.round((h * MAX_IMG_WIDTH) / w); w = MAX_IMG_WIDTH; }
+                const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                uploadedImagesBase64.push(canvas.toDataURL('image/jpeg', 0.92)); 
+                processedCount++;
+                if(processedCount === imageFiles.length) {
+                    renderPreview();
+                    showToast(`成功导入 ${processedCount} 张参考图`, "success");
+                    const pArea = document.getElementById("previewArea");
+                    pArea.classList.add("ring-4", "ring-indigo-300", "scale-[1.01]");
+                    setTimeout(() => pArea.classList.remove("ring-4", "ring-indigo-300", "scale-[1.01]"), 400);
+                }
+            };
+            img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+document.getElementById("refImages").addEventListener("change", function(e) {
+    processFiles(Array.from(e.target.files));
+    e.target.value = "";
+});
+
+/* ===== 文件系统自动保存 API ===== */
 let autoSaveDirHandle = null;
 
 window.handleAutoSaveToggle = async function() {
     const toggle = document.getElementById('autoSaveToggle');
     const label = document.getElementById('autoSavePathLabel');
-    
     if (toggle.checked) {
         if (!window.showDirectoryPicker) {
-            alert("⚠️ 您的浏览器不支持指定目录自动保存功能，请使用最新版 Chrome 或 Edge 浏览器。");
+            showToast("您的浏览器不支持此功能，请使用最新版 Chrome 或 Edge", "error");
             toggle.checked = false;
             return;
         }
@@ -404,9 +559,9 @@ window.handleAutoSaveToggle = async function() {
             autoSaveDirHandle = await window.showDirectoryPicker({ mode: "readwrite" });
             label.innerText = autoSaveDirHandle.name;
             label.title = "已开启自动保存，点击修改目录: " + autoSaveDirHandle.name;
-            log(`已开启自动保存，所有生成图片将存入 [${autoSaveDirHandle.name}]`, "success");
+            showToast(`已开启静默保存，图片将存入 [${autoSaveDirHandle.name}]`, "success");
+            log(`已开启静默保存，目录: ${autoSaveDirHandle.name}`, "info");
         } catch (e) {
-            console.warn("User cancelled directory selection", e);
             toggle.checked = false;
             label.innerText = "未选择";
         }
@@ -414,26 +569,21 @@ window.handleAutoSaveToggle = async function() {
         autoSaveDirHandle = null;
         label.innerText = "未选择";
         label.title = "点击修改保存目录";
-        log("自动保存功能已关闭", "info");
+        showToast("静默自动保存已关闭", "info");
     }
 }
 
 window.changeAutoSavePath = async function() {
     const toggle = document.getElementById('autoSaveToggle');
-    if (!window.showDirectoryPicker) {
-        alert("⚠️ 您的浏览器不支持指定目录自动保存功能，请使用最新版 Chrome 或 Edge 浏览器。");
-        return;
-    }
+    if (!window.showDirectoryPicker) return showToast("浏览器不支持此功能", "error");
     try {
         autoSaveDirHandle = await window.showDirectoryPicker({ mode: "readwrite" });
         const label = document.getElementById('autoSavePathLabel');
         label.innerText = autoSaveDirHandle.name;
         label.title = "已开启自动保存，点击修改目录: " + autoSaveDirHandle.name;
         toggle.checked = true;
-        log(`已修改自动保存目录至 [${autoSaveDirHandle.name}]`, "success");
-    } catch (e) {
-        console.warn("User cancelled directory selection", e);
-    }
+        showToast(`已修改保存目录至 [${autoSaveDirHandle.name}]`, "success");
+    } catch (e) {}
 }
 
 window.autoSaveToDisk = async function(url, filename) {
@@ -445,19 +595,16 @@ window.autoSaveToDisk = async function(url, filename) {
         const writable = await fileHandle.createWritable();
         await writable.write(blob);
         await writable.close();
-        log(`💾 已静默保存至本地: ${filename}`, "success");
+        log(`💾 已静默落盘: ${filename}`, "success");
     } catch(e) {
-        log(`❌ 自动保存到本地失败: ${e.message}`, "error");
+        log(`❌ 落盘失败: ${e.message}`, "error");
     }
 }
 
 /* ===== 参考图编辑器逻辑 ===== */
 let bgCanvas, editorCanvas, bgCtx, editorCtx;
-let editIndex = -1;
-let isDrawing = false;
-let currentTool = 'brush';
-let undoStack = [];
-let redoStack = [];
+let editIndex = -1, isDrawing = false, currentTool = 'brush';
+let undoStack = [], redoStack = [];
 
 function saveEditorState() {
     if (!editorCanvas) return;
@@ -521,10 +668,8 @@ function initEditor() {
         const rect = editorCanvas.getBoundingClientRect();
         const scaleX = editorCanvas.width / rect.width;
         const scaleY = editorCanvas.height / rect.height;
-        
         let clientX = e.clientX || (e.touches && e.touches[0].clientX);
         let clientY = e.clientY || (e.touches && e.touches[0].clientY);
-        
         const x = (clientX - rect.left) * scaleX;
         const y = (clientY - rect.top) * scaleY;
 
@@ -558,7 +703,6 @@ function initEditor() {
     editorCanvas.addEventListener("mousemove", draw);
     editorCanvas.addEventListener("mouseup", stopDraw);
     editorCanvas.addEventListener("mouseout", stopDraw);
-    
     editorCanvas.addEventListener("touchstart", startDraw, {passive: false});
     editorCanvas.addEventListener("touchmove", draw, {passive: false});
     editorCanvas.addEventListener("touchend", stopDraw);
@@ -575,50 +719,34 @@ function setEditorTool(tool) {
 
 function clearEditorCanvas(recordHistory = true) {
     editorCtx.clearRect(0, 0, editorCanvas.width, editorCanvas.height);
-    if (recordHistory) {
-        saveEditorState();
-    }
+    if (recordHistory) saveEditorState();
 }
 
 function openEditor(idx) {
     editIndex = idx;
-    const totalImgs = [...uploadedImagesBase64, ...uploadedImageUrls];
-    const src = totalImgs[idx];
-    
+    const src = [...uploadedImagesBase64, ...uploadedImageUrls][idx];
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
         document.getElementById("editorModalWrapper").classList.remove("hidden");
-        bgCanvas.width = img.width;
-        bgCanvas.height = img.height;
-        editorCanvas.width = img.width;
-        editorCanvas.height = img.height;
-        
+        bgCanvas.width = img.width; bgCanvas.height = img.height;
+        editorCanvas.width = img.width; editorCanvas.height = img.height;
         bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
         bgCtx.drawImage(img, 0, 0);
-        
         clearEditorCanvas(false);
-        
-        undoStack = [];
-        redoStack = [];
+        undoStack = []; redoStack = [];
         saveEditorState();
     };
-    img.onerror = () => {
-        alert("⚠️ 无法加载此图片进行编辑。可能是由于该URL图片具有跨域保护限制，建议您先将其保存到本地，重新上传后再进行涂鸦。");
-    };
+    img.onerror = () => showToast("无法编辑受跨域保护的网络图片，请先保存到本地再拖入。", "error");
     img.src = src;
 }
 
 function saveEditor() {
     try {
         const mergeCanvas = document.createElement("canvas");
-        mergeCanvas.width = bgCanvas.width;
-        mergeCanvas.height = bgCanvas.height;
+        mergeCanvas.width = bgCanvas.width; mergeCanvas.height = bgCanvas.height;
         const mCtx = mergeCanvas.getContext("2d");
-        
-        mCtx.drawImage(bgCanvas, 0, 0);
-        mCtx.drawImage(editorCanvas, 0, 0);
-        
+        mCtx.drawImage(bgCanvas, 0, 0); mCtx.drawImage(editorCanvas, 0, 0);
         const dataUrl = mergeCanvas.toDataURL("image/jpeg", 0.92);
         
         if (editIndex < uploadedImagesBase64.length) {
@@ -628,12 +756,11 @@ function saveEditor() {
             uploadedImagesBase64.push(dataUrl);
             document.getElementById("refUrls").value = uploadedImageUrls.join("\n");
         }
-        
         renderPreview();
         closeEditor();
-        log("✅ 参考素材涂鸦保存成功", "success");
+        showToast("🎨 参考图涂鸦已保存并生效", "success");
     } catch(e) {
-        alert("保存失败：浏览器安全策略拦截了图片数据导出。");
+        showToast("保存失败：浏览器安全策略拦截。", "error");
     }
 }
 
@@ -678,19 +805,21 @@ function updateLogTaskCard(uniqueId, statusMsg, progress, taskId = null, isError
     const progressEl = document.getElementById(`log-progress-${uniqueId}`);
     const idEl = document.getElementById(`log-id-${uniqueId}`);
     const cardEl = document.getElementById(`log-card-${uniqueId}`);
-    
     if(!cardEl) return;
 
     if(statusEl) {
         statusEl.innerText = statusMsg;
         statusEl.classList.remove('animate-pulse');
-        if(isError) statusEl.className = "text-red-400 text-[10px]";
-        else if(progress === 100) statusEl.className = "text-green-400 text-[10px]";
-        else statusEl.className = "text-blue-300 text-[10px]";
+        if(isError) statusEl.className = "text-rose-400 text-[11px] font-medium";
+        else if(progress === 100) statusEl.className = "text-emerald-400 text-[11px] font-bold";
+        else {
+            statusEl.className = "text-indigo-300 text-[11px] font-medium";
+            if(progress > 0 && progress < 100) statusEl.classList.add('animate-pulse');
+        }
     }
     if(progressEl && !isError) progressEl.style.width = `${progress}%`;
-    if(progressEl && isError) progressEl.className = "bg-red-500 h-1.5 rounded-full";
-    if(progressEl && progress === 100) progressEl.className = "bg-green-500 h-1.5 rounded-full";
+    if(progressEl && isError) progressEl.className = "bg-rose-500 h-full rounded-full";
+    if(progressEl && progress === 100) progressEl.className = "bg-emerald-500 h-full rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]";
     if(idEl && taskId) idEl.innerText = `ID: ${taskId}`;
 }
 
@@ -698,39 +827,58 @@ function renderResultSkeleton(uniqueId) {
     const area = document.getElementById("resultArea");
     if(!area) return;
     const skeletonHTML = `
-        <div id="skeleton-${uniqueId}" class="relative w-full mb-4 break-inside-avoid aspect-[3/4] bg-gray-100 rounded-2xl flex flex-col items-center justify-center overflow-hidden border border-dashed border-gray-300 shadow-sm">
+        <div id="skeleton-${uniqueId}" class="relative w-full aspect-[3/4] bg-gray-100 rounded-2xl flex flex-col items-center justify-center overflow-hidden border border-dashed border-gray-300 shadow-sm transition-colors duration-300">
             <div class="absolute inset-0 bg-gray-200/50 animate-pulse"></div>
             <div class="relative z-10 flex flex-col items-center w-3/4">
-                <svg class="w-8 h-8 text-gray-400 mb-2 animate-spin" fill="none" viewBox="0 0 24 24">
+                <svg id="skel-icon-${uniqueId}" class="w-8 h-8 text-indigo-400 mb-3 animate-spin" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <div class="text-xs font-semibold text-gray-500 mb-2 tracking-widest">生成中...</div>
-                <div class="w-full bg-gray-300 rounded-full h-1.5 overflow-hidden">
-                    <div id="skel-progress-${uniqueId}" class="bg-green-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                <div id="skel-title-${uniqueId}" class="text-xs font-bold text-indigo-500 mb-2 tracking-widest">生成中...</div>
+                <div id="skel-bar-container-${uniqueId}" class="w-full bg-gray-300 rounded-full h-1.5 overflow-hidden shadow-inner">
+                    <div id="skel-progress-${uniqueId}" class="bg-indigo-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
                 </div>
-                <div id="skel-text-${uniqueId}" class="text-[10px] text-gray-500 mt-1 font-mono">0%</div>
+                <div id="skel-text-${uniqueId}" class="text-[10px] text-gray-500 mt-2 font-mono font-medium">0%</div>
             </div>
         </div>
     `;
     area.insertAdjacentHTML('beforeend', skeletonHTML);
 }
 
-function updateSkeletonProgress(uniqueId, progress, isError = false) {
+function updateSkeletonProgress(uniqueId, progress, isError = false, errorMsg = "生成失败") {
     const progEl = document.getElementById(`skel-progress-${uniqueId}`);
     const textEl = document.getElementById(`skel-text-${uniqueId}`);
-    if(progEl && !isError) progEl.style.width = `${progress}%`;
-    if(textEl && !isError) textEl.innerText = `${progress}%`;
-    
-    if(isError && textEl) {
-        textEl.innerText = "生成失败";
-        textEl.className = "text-xs text-red-500 mt-1 font-bold";
-        if(progEl) progEl.className = "bg-red-500 h-1.5 rounded-full";
-        const skel = document.getElementById(`skeleton-${uniqueId}`);
+    const iconEl = document.getElementById(`skel-icon-${uniqueId}`);
+    const titleEl = document.getElementById(`skel-title-${uniqueId}`);
+    const barContainer = document.getElementById(`skel-bar-container-${uniqueId}`);
+    const skel = document.getElementById(`skeleton-${uniqueId}`);
+
+    if(!isError) {
+        if(progEl) progEl.style.width = `${progress}%`;
+        if(textEl) textEl.innerText = `${progress}%`;
+    } else {
         if(skel) {
             const pulse = skel.querySelector('.animate-pulse');
             if(pulse) pulse.classList.remove('animate-pulse');
+            skel.classList.remove('bg-gray-100', 'border-gray-300');
+            skel.classList.add('bg-rose-50', 'border-rose-300'); 
         }
+        
+        if(iconEl) {
+            iconEl.classList.remove('animate-spin', 'text-indigo-400');
+            iconEl.classList.add('text-rose-500', 'w-10', 'h-10');
+            iconEl.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>`;
+            iconEl.setAttribute('stroke', 'currentColor');
+            iconEl.removeAttribute('fill');
+        }
+
+        if(titleEl) {
+            titleEl.innerText = errorMsg;
+            titleEl.className = "text-sm font-extrabold text-rose-600 tracking-widest mt-1";
+        }
+
+        if(barContainer) barContainer.style.display = 'none';
+        if(textEl) textEl.style.display = 'none';
     }
 }
 
@@ -770,15 +918,15 @@ window.renderPreview = function() {
     
     total.forEach((src, idx) => {
         const wrap = document.createElement("div"); 
-        wrap.className = "relative cursor-move hover:scale-[1.03] transition-transform group";
+        wrap.className = "relative cursor-move hover:scale-[1.05] transition-transform group duration-300";
         
         const img = document.createElement("img"); 
         img.src = src; 
-        img.className = "w-20 h-20 object-cover rounded-xl shadow-sm pointer-events-none border border-slate-300";
+        img.className = "w-20 h-20 object-cover rounded-xl shadow-md pointer-events-none border border-slate-200";
         
         const badge = document.createElement("span"); 
         badge.innerText = idx + 1;
-        badge.className = "absolute top-1 left-1 bg-black/60 backdrop-blur text-white text-[10px] font-bold px-1.5 py-0.5 rounded pointer-events-none";
+        badge.className = "absolute top-1 left-1 bg-black/60 backdrop-blur text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm pointer-events-none";
         
         const btnDelete = document.createElement("button"); 
         btnDelete.innerText = "✕";
@@ -806,8 +954,14 @@ window.renderPreview = function() {
 
 window.checkCredits = async function() {
     const key = document.getElementById("apikey").value.trim();
-    if(!key) return log("API Key 为空","error");
+    if(!key) return showToast("请先填写 API Key", "error");
     localStorage.setItem('banana_apikey', key); 
+    
+    const btn = document.getElementById("btnCheckCredits");
+    const origHtml = btn.innerHTML;
+    btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>查询中`;
+    btn.disabled = true;
+
     try {
         log("查询余额中...");
         const res = await fetch(`${HOST}/client/openapi/getAPIKeyCredits`, {
@@ -815,21 +969,32 @@ window.checkCredits = async function() {
             body: JSON.stringify({apiKey: key})
         });
         const d = await parseSafeJson(res);
-        if(d && d.code === 0) log("余额：" + (d.data.credits / 200).toFixed(2), "success");
-        else log("查询失败：" + (d ? d.msg : "未知原因"), "error");
-    } catch(err) { log("查询异常：" + err.message, "error"); }
+        if(d && d.code === 0) {
+            const num = (d.data.credits / 200).toFixed(2);
+            log(`余额：${num}`, "success");
+            showToast(`剩余算力积分: ${num}`, "success");
+        } else {
+            log("查询失败：" + (d ? d.msg : "未知原因"), "error");
+            showToast(d ? d.msg : "查询失败", "error");
+        }
+    } catch(err) { 
+        log("查询异常：" + err.message, "error");
+        showToast("网络连接异常", "error");
+    } finally {
+        btn.innerHTML = origHtml;
+        btn.disabled = false;
+    }
 };
 
 window.recoverTask = async function() {
     const taskId = document.getElementById("recoverTaskId").value.trim();
-    if (!taskId) return alert("请输入要找回的任务 ID！");
-    
+    if (!taskId) return showToast("请输入要找回的任务 ID！", "warning");
     const key = document.getElementById("apikey").value.trim();
-    if(!key) return alert("请先填写 API Key");
+    if(!key) return showToast("请先填写 API Key", "error");
 
-    const btn = document.querySelector("#recoverTaskId").nextElementSibling;
-    const originalText = btn.innerText;
-    btn.innerText = "查找中...";
+    const btn = document.getElementById("btnRecover");
+    const origHtml = btn.innerHTML;
+    btn.innerHTML = `<svg class="animate-spin h-3 w-3 text-white inline-block" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
     btn.disabled = true;
 
     try {
@@ -840,18 +1005,16 @@ window.recoverTask = async function() {
         const d = await parseSafeJson(res);
         
         if (!d || !d.data) {
-            alert("未找到该任务或查询失败");
+            showToast("未找到该任务或查询失败", "error");
         } else if (d.data.status === "succeeded") {
             log(`[找回成功] 任务ID: ${taskId}`, "success");
+            showToast("任务结果找回成功！", "success");
             
-            let savedP = null;
-            let costSeconds = null;
+            let savedP = null, costSeconds = null;
             try {
                 let meta = JSON.parse(localStorage.getItem('banana_tasks_meta') || '{}');
                 savedP = meta[taskId]; 
-                if (savedP && savedP.costTime) {
-                    costSeconds = savedP.costTime;
-                }
+                if (savedP && savedP.costTime) costSeconds = savedP.costTime;
             } catch(e) {}
 
             if (!costSeconds) {
@@ -861,7 +1024,6 @@ window.recoverTask = async function() {
             }
 
             const badgeText = costSeconds ? `耗时 ${costSeconds} 秒` : "已找回";
-
             const p = savedP || {
                 model: d.data.model || d.data.request?.model || "nano-banana-2",
                 prompt: d.data.prompt || d.data.request?.prompt || "本地缓存未找到该任务的原始提示词（图片已找回）",
@@ -874,29 +1036,29 @@ window.recoverTask = async function() {
             d.data.results.forEach(r => { 
                 addResult(r.url, p, uniqueId, badgeText); 
                 currentResultUrls.push(r.url); 
-                
-                if (autoSaveDirHandle) {
-                    autoSaveToDisk(r.url, `Banana_Recovered_${Date.now()}_${Math.floor(Math.random()*1000)}.png`);
-                }
+                if (autoSaveDirHandle) autoSaveToDisk(r.url, `Banana_Recovered_${Date.now()}_${Math.floor(Math.random()*1000)}.png`);
             });
             document.getElementById("downloadAllBtn").classList.remove("hidden");
             document.getElementById("recoverTaskId").value = ""; 
         } else if (d.data.status === "failed") {
-            alert(`任务已失败，无法找回。失败原因: ${d.data.failReason || '未知'}`);
+            showToast(`任务已失败。原因: ${d.data.failReason || '未知'}`, "error");
         } else {
-            alert(`任务仍在处理中 (状态: ${d.data.status}, 进度: ${d.data.progress || 0}%)。请等待完成后再次找回！`);
+            showToast(`任务处理中 (进度: ${d.data.progress || 0}%)，稍后再试`, "info");
         }
     } catch (e) {
-        alert(`查询异常: ${e.message}`);
+        showToast(`查询异常: ${e.message}`, "error");
     } finally {
-        btn.innerText = originalText;
+        btn.innerHTML = origHtml;
         btn.disabled = false;
     }
 };
 
 window.generate = async function() {
     const key = document.getElementById("apikey").value.trim();
-    if(!key) return log("API Key 为空", "error");
+    if(!key) return showToast("请先填写左上角的 API Key", "warning");
+    const promptText = document.getElementById("prompt").value.trim();
+    if(!promptText) showToast("提示词为空，将可能导致随机生成", "info");
+
     const count = getCount();
     isTaskCancelled = false;
     document.getElementById("resultArea").innerHTML = "";
@@ -908,7 +1070,7 @@ window.generate = async function() {
     
     const params = {
         model: document.getElementById("model").value,
-        prompt: document.getElementById("prompt").value,
+        prompt: promptText,
         ratio: document.getElementById("ratio").value,
         size: document.getElementById("imageSize").value
     };
@@ -1011,10 +1173,7 @@ async function pollResult(id, key, uniqueId, p, taskStartTime){
                 d.data.results.forEach(r => { 
                     addResult(r.url, p, uniqueId, `耗时 ${costSeconds} 秒`); 
                     currentResultUrls.push(r.url); 
-                    
-                    if (autoSaveDirHandle) {
-                        autoSaveToDisk(r.url, `Banana_${Date.now()}_${Math.floor(Math.random()*1000)}.png`);
-                    }
+                    if (autoSaveDirHandle) autoSaveToDisk(r.url, `Banana_${Date.now()}_${Math.floor(Math.random()*1000)}.png`);
                 });
                 document.getElementById("downloadAllBtn").classList.remove("hidden");
                 return;
@@ -1031,12 +1190,15 @@ async function pollResult(id, key, uniqueId, p, taskStartTime){
     }
 }
 
+// ===== 【核心优化】后台静默高画质压缩缩略图 =====
 function addResult(url, p, uniqueId, badgeText = ""){
-    const record = { url, model: p.model, prompt: p.prompt, ratio: p.ratio, imageSize: p.size };
+    let maxSeq = historyImages.reduce((max, it) => Math.max(max, it.seqId || 0), 0);
+    const record = { seqId: maxSeq + 1, url, model: p.model, prompt: p.prompt, ratio: p.ratio, imageSize: p.size };
+    
     historyImages.unshift(record);
     if(historyImages.length > MAX_HISTORY) historyImages = historyImages.slice(0, MAX_HISTORY);
     localStorage.setItem('banana_history', JSON.stringify(historyImages));
-    renderHistory();
+    debounceRenderHistory();
     
     const skelText = document.getElementById(`skel-text-${uniqueId}`);
     if (skelText) {
@@ -1046,9 +1208,26 @@ function addResult(url, p, uniqueId, badgeText = ""){
 
     const tempImg = new Image();
     
+    // 【优化】提高缩略图分辨率至 300px，提升清晰度
+    const thumbImg = new Image();
+    thumbImg.crossOrigin = "anonymous";
+    thumbImg.onload = () => {
+        try {
+            const MAX_THUMB = 300; 
+            let tw = thumbImg.width, th = thumbImg.height;
+            if (tw > th) { th = Math.round((th * MAX_THUMB) / tw); tw = MAX_THUMB; }
+            else { tw = Math.round((tw * MAX_THUMB) / th); th = MAX_THUMB; }
+            const tCanvas = document.createElement('canvas');
+            tCanvas.width = tw; tCanvas.height = th;
+            tCanvas.getContext('2d').drawImage(thumbImg, 0, 0, tw, th);
+            record.thumbnail = tCanvas.toDataURL('image/jpeg', 0.7); // 提高 JPEG 画质参数
+            localStorage.setItem('banana_history', JSON.stringify(historyImages));
+        } catch(e) {}
+    };
+
     tempImg.onload = () => {
         const wrap = document.createElement("div");
-        wrap.className = "relative group mb-4 break-inside-avoid rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white";
+        wrap.className = "relative group rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white";
         
         const img = document.createElement("img");
         img.src = url; 
@@ -1058,7 +1237,6 @@ function addResult(url, p, uniqueId, badgeText = ""){
 
         const overlay = document.createElement("div");
         overlay.className = "absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none";
-
         wrap.append(img, overlay);
 
         if (badgeText) {
@@ -1069,16 +1247,15 @@ function addResult(url, p, uniqueId, badgeText = ""){
         }
 
         const skeleton = document.getElementById(`skeleton-${uniqueId}`);
-        if(skeleton && skeleton.parentNode) {
-            skeleton.parentNode.replaceChild(wrap, skeleton);
-        } else {
-            document.getElementById("resultArea").appendChild(wrap);
-        }
+        if(skeleton && skeleton.parentNode) skeleton.parentNode.replaceChild(wrap, skeleton);
+        else document.getElementById("resultArea").appendChild(wrap);
+        
+        thumbImg.src = url;
     };
 
     tempImg.onerror = () => {
         const wrap = document.createElement("div");
-        wrap.className = "relative group mb-4 break-inside-avoid rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white";
+        wrap.className = "relative group rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white";
         const img = document.createElement("img");
         img.src = url;
         img.className = "w-full h-auto cursor-pointer transition-transform duration-700 group-hover:scale-105 animate-fade-in block";
@@ -1098,19 +1275,23 @@ function getFilteredHistory() {
     const keyword = searchInput ? searchInput.value.trim().toLowerCase() : "";
     return historyImages.map((item, originalIndex) => ({ item, originalIndex })).filter(({item}) => {
         if (!keyword) return true;
-        if (typeof item === 'object' && item.prompt) {
-            return item.prompt.toLowerCase().includes(keyword);
-        }
+        if (typeof item === 'object' && item.prompt) return item.prompt.toLowerCase().includes(keyword);
         return false;
     });
 }
 
+let renderHistoryTimeout = null;
+window.debounceRenderHistory = function() {
+    clearTimeout(renderHistoryTimeout);
+    renderHistoryTimeout = setTimeout(() => { renderHistory(); }, 300);
+};
+
+// ================= 【核心优化】渲染历史记录时，去模糊，清晰显示过期提示 =================
 window.renderHistory = function() {
     const area = document.getElementById("historyArea"); if(!area) return;
     area.innerHTML = "";
     
     const filteredImages = getFilteredHistory();
-    
     const searchInput = document.getElementById("historySearch");
     const keyword = searchInput ? searchInput.value.trim() : "";
     if (filteredImages.length === 0 && keyword) {
@@ -1118,34 +1299,62 @@ window.renderHistory = function() {
         return;
     }
 
+    const fragment = document.createDocumentFragment();
+
     filteredImages.forEach(({item, originalIndex}) => {
         const url = typeof item === 'string' ? item : item.url;
         
         const wrap = document.createElement("div"); 
-        wrap.className = "relative group mb-3 break-inside-avoid rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 bg-white";
+        wrap.className = "relative group rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 bg-white h-full";
         
         const img = document.createElement("img"); 
         img.src = url; 
-        img.className = "w-full h-auto cursor-pointer transition-transform duration-500 group-hover:scale-105 block";
+        img.className = "w-full aspect-square object-cover cursor-pointer transition-transform duration-500 group-hover:scale-105 block bg-slate-50";
         img.loading = "lazy";   
         img.decoding = "async"; 
         img.onclick = () => openModal(item);
 
+        img.onerror = function() {
+            this.onerror = null;
+            if (item.thumbnail) {
+                this.src = item.thumbnail;
+                // 【优化】去除模糊和黑透，只保留极其轻微的去色，保证图片极度清晰
+                this.className = "w-full aspect-square object-cover cursor-pointer transition-all duration-500 opacity-85 grayscale-[20%] border border-slate-200";
+            } else {
+                this.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect width='200' height='200' fill='%23f8fafc'/%3E%3C/svg%3E";
+                this.className = "w-full aspect-square object-cover cursor-pointer transition-transform duration-500 opacity-80 border border-slate-200";
+            }
+            
+            // 【优化】精巧的底部悬浮标签
+            const expLabel = document.createElement("div");
+            expLabel.className = "absolute bottom-2 left-1/2 transform -translate-x-1/2 flex flex-col items-center justify-center pointer-events-none z-20 transition-transform group-hover:scale-105 w-max";
+            expLabel.innerHTML = `<span class="bg-rose-500/80 text-white text-[9px] font-bold px-2 py-0.5 rounded-full backdrop-blur-md shadow-sm border border-rose-400/30 tracking-wider">已过期</span>`;
+            wrap.appendChild(expLabel);
+        };
+
         const overlay = document.createElement("div");
-        overlay.className = "absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-black/30 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none";
+        overlay.className = "absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-black/30 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10";
+
+        const badge = document.createElement("span");
+        badge.innerText = item.seqId || "?";
+        badge.className = "absolute top-2 left-2 bg-black/40 backdrop-blur-md text-white text-[11px] font-bold px-2 py-0.5 rounded-lg shadow-sm pointer-events-none z-20 border border-white/20";
 
         const btn = document.createElement("button"); btn.innerText = "✕";
-        btn.className = "absolute top-2 right-2 bg-red-500/80 backdrop-blur hover:bg-red-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center shadow-md transition-all opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 border border-white/20";
+        btn.className = "absolute top-2 right-2 bg-rose-500/80 backdrop-blur hover:bg-rose-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center shadow-md transition-all opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 border border-white/20 z-30";
         btn.onclick = (e) => { 
             e.stopPropagation(); 
             historyImages.splice(originalIndex, 1); 
             localStorage.setItem('banana_history', JSON.stringify(historyImages)); 
-            renderHistory(); 
+            debounceRenderHistory(); 
         };
-        wrap.append(img, overlay, btn); area.appendChild(wrap);
+        wrap.append(img, overlay, badge, btn); 
+        fragment.appendChild(wrap);
     });
+    
+    area.appendChild(fragment);
 };
 
+// ================= 【核心优化】查看大图时，同步去除重度模糊 =================
 window.openModal = function(item) {
     currentModalItem = item;
     const url = typeof item === 'string' ? item : item.url;
@@ -1156,7 +1365,29 @@ window.openModal = function(item) {
         return (typeof img === 'string' ? img : img.url) === url;
     });
     
-    document.getElementById("modalImg").src = url;
+    const modalImg = document.getElementById("modalImg");
+    const expNotice = document.getElementById("modalExpiredNotice");
+    
+    expNotice.classList.add("hidden");
+    expNotice.classList.remove("flex");
+    modalImg.style.opacity = "1";
+    modalImg.style.filter = "none";
+    
+    modalImg.onerror = function() {
+        this.onerror = null;
+        if (item.thumbnail) {
+            this.src = item.thumbnail;
+        } else {
+            this.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect width='400' height='300' fill='%231e293b' rx='16'/%3E%3C/svg%3E";
+        }
+        // 全屏查看时也保持相对清晰
+        this.style.opacity = "0.7";
+        this.style.filter = "blur(2px) grayscale(30%)";
+        expNotice.classList.remove("hidden");
+        expNotice.classList.add("flex");
+    };
+    modalImg.src = url;
+
     document.getElementById("imageModal").classList.remove("hidden");
     document.getElementById("prevArrow").classList.toggle("hidden", currentModalIndex <= 0);
     document.getElementById("nextArrow").classList.toggle("hidden", currentModalIndex >= filteredImages.length - 1 || currentModalIndex === -1);
@@ -1186,16 +1417,20 @@ window.reuseModalParams = function() {
     if(currentModalItem.ratio) document.getElementById("ratio").value = currentModalItem.ratio;
     if(currentModalItem.imageSize) document.getElementById("imageSize").value = currentModalItem.imageSize;
     closeModal(); 
-    log("✅ 已成功复用该图的生成参数", "success");
+    showToast("✅ 已成功复用该图的生成参数", "success");
+    const paramArea = document.getElementById("prompt").parentElement.parentElement;
+    paramArea.classList.add("ring-4", "ring-indigo-300", "rounded-2xl");
+    setTimeout(() => paramArea.classList.remove("ring-4", "ring-indigo-300", "rounded-2xl"), 600);
 };
 
 window.uploadToRefFromModal = async function() {
     const url = document.getElementById("modalImg").src;
     if(!url) return;
     
+    if(url.startsWith('data:image')) return showToast("图片已失效，无法设为参考素材", "error");
+
     if (uploadedImagesBase64.length + uploadedImageUrls.length >= MAX_IMAGES) {
-        alert("参考素材最多只能添加16张！");
-        return;
+        return showToast("参考素材最多只能添加16张！", "warning");
     }
 
     try {
@@ -1224,7 +1459,7 @@ window.uploadToRefFromModal = async function() {
     }
     
     closeModal();
-    log("✅ 已将当前图片设为参考素材", "success");
+    showToast("✅ 已将当前图片设为参考素材", "success");
     window.scrollTo({ top: 0, behavior: 'smooth' });
     const previewArea = document.getElementById("previewArea");
     previewArea.classList.add("ring-4", "ring-indigo-400", "scale-[1.02]", "transition-all", "duration-300");
@@ -1235,22 +1470,22 @@ window.clearApiKey = function() {
     if(confirm('确定彻底清除本地保存的 API Key？')) {
         document.getElementById('apikey').value = '';
         localStorage.removeItem('banana_apikey');
-        log("API Key 已清除", "info");
+        showToast("API Key 已从本地彻底清除", "success");
     }
 };
 
 window.clearHistory = function() {
     if(confirm("确定要清空所有历史记录吗？")) {
-        historyImages = []; localStorage.setItem('banana_history', "[]"); renderHistory();
-        log("历史记录已清空", "info");
+        historyImages = []; localStorage.setItem('banana_history', "[]"); debounceRenderHistory();
+        showToast("历史记录已清空", "success");
     }
 };
 
 window.exportHistory = function() {
-    if(historyImages.length === 0) return alert("当前无历史记录可导出");
+    if(historyImages.length === 0) return showToast("当前无历史记录可导出", "warning");
     const b = new Blob([JSON.stringify(historyImages, null, 2)], {type: "application/json"});
     const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `Banana_Studio_History_${Date.now()}.json`; a.click();
-    log("已成功导出历史记录数据", "success");
+    showToast("已成功导出历史记录数据", "success");
 };
 
 window.importHistory = function(e) {
@@ -1260,35 +1495,69 @@ window.importHistory = function(e) {
             const d = JSON.parse(ev.target.result); 
             if(Array.isArray(d)) { 
                 const currentUrls = new Set(historyImages.map(item => typeof item === 'string' ? item : item.url));
+                let maxSeq = historyImages.reduce((max, it) => Math.max(max, it.seqId || 0), 0);
                 d.forEach(item => {
                     const itemUrl = typeof item === 'string' ? item : item.url;
-                    if(!currentUrls.has(itemUrl)) { historyImages.push(item); currentUrls.add(itemUrl); }
+                    if(!currentUrls.has(itemUrl)) { 
+                        let obj = typeof item === 'string' ? { url: item } : { ...item };
+                        if (!obj.seqId) obj.seqId = ++maxSeq;
+                        else maxSeq = Math.max(maxSeq, obj.seqId);
+                        historyImages.push(obj); 
+                        currentUrls.add(itemUrl); 
+                    }
                 });
                 if(historyImages.length > MAX_HISTORY) historyImages = historyImages.slice(0, MAX_HISTORY);
-                localStorage.setItem('banana_history', JSON.stringify(historyImages)); renderHistory(); 
-                log("成功导入并合并记录","success"); 
+                localStorage.setItem('banana_history', JSON.stringify(historyImages)); debounceRenderHistory(); 
+                showToast("成功导入并合并历史记录", "success"); 
             } 
-        } catch(e) { alert("文件解析失败"); }
+        } catch(e) { showToast("文件解析失败，请检查文件格式", "error"); }
         e.target.value = '';
     }; r.readAsText(f);
 };
 
 window.downloadModalImage = async function() {
     const url = document.getElementById("modalImg").src;
+    if(url.startsWith('data:image')) return showToast("图片已失效，无法下载", "error");
     try {
         const res = await fetch(url); const blob = await res.blob();
         const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `Nano_${Date.now()}.png`; a.click();
     } catch(e) { window.open(url, '_blank'); }
 };
 
+/* ===== JSZip 一键优雅打包下载 ===== */
 window.downloadAllResults = async function() {
-    log("开始下载全部当前结果...");
-    for(let url of currentResultUrls) {
-        try {
-            const res = await fetch(url); const blob = await res.blob();
-            const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `Result_${Date.now()}.png`; a.click();
-            await new Promise(r => setTimeout(r, 400));
-        } catch(e) {}
+    if (currentResultUrls.length === 0) return showToast("当前没有生成结果可下载", "warning");
+    
+    const btn = document.getElementById("downloadAllBtn");
+    const origHtml = btn.innerHTML;
+    btn.innerHTML = `<svg class="animate-spin h-4 w-4 text-indigo-600 mr-1 inline-block" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 打包中...`;
+    btn.disabled = true;
+    showToast("正在将图片打包为 ZIP，请稍候...", "info");
+
+    try {
+        const zip = new JSZip();
+        const promises = currentResultUrls.map(async (url, index) => {
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                zip.file(`Banana_Result_${index + 1}_${Date.now()}.png`, blob);
+            } catch(err) {
+                console.warn("Failed to fetch image for zip", url);
+            }
+        });
+        
+        await Promise.all(promises);
+        const content = await zip.generateAsync({type:"blob"});
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(content);
+        a.download = `Banana_Batch_Results_${Date.now()}.zip`;
+        a.click();
+        showToast("✅ 批量打包下载成功！", "success");
+    } catch(e) {
+        showToast("打包下载失败: " + e.message, "error");
+    } finally {
+        btn.innerHTML = origHtml;
+        btn.disabled = false;
     }
 };
 
@@ -1303,6 +1572,7 @@ window.cancelTask = function() {
     isTaskCancelled = true; 
     toggleTaskUI(false); 
     log("任务已手动取消", "warning");
+    showToast("任务已手动停止", "warning");
     
     document.querySelectorAll('[id^="skeleton-"]').forEach(skel => {
         const uniqueId = skel.id.substring(9); 
@@ -1313,7 +1583,6 @@ window.cancelTask = function() {
     });
     
     document.querySelectorAll('[id^="log-status-"]').forEach(statusEl => {
-        // 由于加上了耗时，取消任务时通过模糊包含判断，避免把已成功的任务标红
         if(!statusEl.innerText.includes("生成成功") && !statusEl.innerText.includes("失败")) {
             statusEl.innerText = "已手动取消";
             statusEl.className = "text-red-400 text-[10px]";
@@ -1333,33 +1602,6 @@ function getCount(){
     return s === "custom" ? Number(document.getElementById("customCount").value) || 1 : Number(s);
 }
 
-document.getElementById("refImages").addEventListener("change", function(e) {
-    const files = Array.from(e.target.files);
-    if (uploadedImagesBase64.length + uploadedImageUrls.length + files.length > MAX_IMAGES) return alert("最多16张");
-    files.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            const img = new Image();
-            img.onload = () => {
-                let w = img.width, h = img.height;
-                if (w > MAX_IMG_WIDTH) { h = Math.round((h * MAX_IMG_WIDTH) / w); w = MAX_IMG_WIDTH; }
-                const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
-                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                uploadedImagesBase64.push(canvas.toDataURL('image/jpeg', 0.92)); renderPreview();
-            };
-            img.src = ev.target.result;
-        };
-        reader.readAsDataURL(file);
-    });
-    e.target.value = "";
-});
-
-document.getElementById("refUrls").addEventListener("input", function(){
-    let urls = this.value.split("\n").map(v => v.trim()).filter(Boolean);
-    if (urls.length + uploadedImagesBase64.length > MAX_IMAGES) urls = urls.slice(0, MAX_IMAGES - uploadedImagesBase64.length);
-    uploadedImageUrls = urls; renderPreview();
-});
-
 async function fetchAnnouncement() {
     try {
         const data = { code: 0, data: { message: "📢 欢迎使用 PH AI Studio！系统已更新至最新版本。如果遇到生成排队，请耐心等待。" } };
@@ -1372,7 +1614,7 @@ async function fetchAnnouncement() {
 
 window.addEventListener('DOMContentLoaded', () => {
     const k = localStorage.getItem('banana_apikey'); if(k) document.getElementById('apikey').value = k;
-    fetchAnnouncement(); renderPreview(); renderHistory(); initSortable();
+    fetchAnnouncement(); renderPreview(); debounceRenderHistory(); initSortable();
     initEditor(); 
     document.getElementById("countSelect").addEventListener("change", e => { document.getElementById("customCount").classList.toggle("hidden", e.target.value !== "custom"); });
 });
